@@ -2,21 +2,21 @@ import threading
 
 import customtkinter as ctk
 
-from google_calendar import (
+from .google_calendar import (
     authenticate_google,
     get_or_create_calendar,
     import_ics_to_calendar,
 )
-from outlook_calendar import (
+from .outlook_calendar import (
     authenticate_outlook,
     get_or_create_outlook_calendar,
     import_ics_to_outlook,
 )
-from parse_schedule import (
+from .parse_schedule import (
     extract_courses,
     fetch_page_info,
+    flatten_meetings,
     generate_ics,
-    sorted_courses,
 )
 
 
@@ -59,8 +59,8 @@ class App(ctk.CTk):
         try:
             html = fetch_page_info(term)
             courses = extract_courses(html, term)
-            parsed = sorted_courses(courses)
-            output_path = "../res/Schedule.ics"
+            parsed = flatten_meetings(courses)
+            output_path = "res/Schedule.ics"
             generate_ics(parsed, output_path)
 
             if import_to_gcal:

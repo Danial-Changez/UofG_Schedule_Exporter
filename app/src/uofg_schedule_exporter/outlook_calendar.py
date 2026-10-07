@@ -11,8 +11,8 @@ from icalendar import Calendar
 CLIENT_ID = "3751d727-01d8-4cf3-8b3b-895f9e107b66"
 AUTHORITY = "https://login.microsoftonline.com/2dc6a781-c713-4a93-8cb0-258bef89a7b3"
 SCOPES = ["Calendars.ReadWrite"]
-TOKEN_PATH = "../res/outlook_token.json"
-ICS_PATH = "../res/Schedule.ics"
+TOKEN_PATH = "res/outlook_token.json"
+ICS_PATH = "res/Schedule.ics"
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 
 

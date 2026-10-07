@@ -1,7 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uofg-schedule-exporter"
+version = "1.0"
+description = "Export a University of Guelph WebAdvisor schedule to ICS, Google Calendar or Outlook."
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4",
+    "customtkinter",
+    "google-api-python-client",
+    "google-auth",
+    "google-auth-oauthlib",
+    "icalendar",
+    "msal",
+    "pytz",
+    "requests",
+    "selenium",
+    "webdriver-manager",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
 [tool.ruff]
 line-length = 88
-target-version = "py310"
-src = ["src"]
 
 [tool.ruff.lint]
 # pycodestyle, pyflakes, isort, pep8-naming, pyupgrade, bugbear, simplify

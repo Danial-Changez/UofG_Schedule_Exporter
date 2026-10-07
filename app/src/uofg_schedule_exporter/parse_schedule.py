@@ -86,7 +86,7 @@ def extract_courses(html: str, term: str) -> list[dict]:
     return planned
 
 
-def sorted_courses(raw: list[dict]) -> list[dict]:
+def flatten_meetings(raw: list[dict]) -> list[dict]:
     output = []
 
     for entry in raw:
@@ -209,10 +209,10 @@ def main():
     html = fetch_page_info(term)
 
     courses = extract_courses(html, term)
-    sorted_results = sorted_courses(courses)
+    meetings = flatten_meetings(courses)
 
-    ics_path = "../res/Schedule.ics"
-    generate_ics(sorted_results, ics_path)
+    ics_path = "res/Schedule.ics"
+    generate_ics(meetings, ics_path)
 
     end_time = time.perf_counter()
     execution_time = end_time - start_time

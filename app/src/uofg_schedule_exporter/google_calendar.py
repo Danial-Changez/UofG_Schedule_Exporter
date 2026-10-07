@@ -10,8 +10,8 @@ from googleapiclient.discovery import build
 from icalendar import Calendar
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
-CREDENTIALS_PATH = "../res/credentials.json"
-TOKEN_PATH = "../res/token.json"
+CREDENTIALS_PATH = "res/credentials.json"
+TOKEN_PATH = "res/token.json"
 
 
 def authenticate_google():
@@ -105,7 +105,7 @@ def import_ics_to_calendar(service, calendar_id, ics_file_path):
 
 
 def main():
-    ics_path = "../res/Schedule.ics"
+    ics_path = "res/Schedule.ics"
     service = authenticate_google()
     calendar_id = get_or_create_calendar(service)
     import_ics_to_calendar(service, calendar_id, ics_path)
