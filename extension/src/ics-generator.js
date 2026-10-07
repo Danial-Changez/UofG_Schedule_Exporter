@@ -265,9 +265,10 @@ function buildCalendarLines(events) {
       }
     }
 
+    // RFC 5545 TEXT values carry a line break as the two characters "\n".
     const desc = `Instructor(s): ${(ev.Instructors || []).join(
       " | ",
-    )}\nCredits: ${ev.Credits || ""}`;
+    )}\\nCredits: ${ev.Credits || ""}`;
 
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${cryptoRandomId()}@schedule`);
