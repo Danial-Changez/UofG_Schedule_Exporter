@@ -1,183 +1,140 @@
 import { expect } from "chai";
 
-/**
- * Unit tests for Google provider auth/import flows.
- * - Stubs chrome.identity.getAuthToken and network fetch to validate
- *   auth token usage, calendar listing/creation, event posting, and cleanup.
- */
+const API = "https://www.googleapis.com/calendar/v3";
 
-describe("Google OAuth Integration", () => {
-  let originalChrome;
-  let originalFetch;
-  let lastOpts;
-  let createdEvents;
-  let calendarExists;
-  let createdCalendarId;
-  let tags;
+const lecture = {
+  CourseName: "CIS*2500",
+  SectionNumber: "0101",
+  Credits: 0.5,
+  Instructors: ["Alice Example"],
+  InstructionalMethod: "LEC",
+  StartTime: "9:00 AM",
+  EndTime: "10:20 AM",
+  DaysOfWeek: "MWF",
+  Location: "ROZH 104",
+  StartDate: "09/04/2025",
+  EndDate: "12/12/2025",
+};
+
+describe("Google provider", () => {
+  const originals = {};
+  let calendars;
+  let requests;
+  let rejectEvents;
+
+  const ok = (body) => ({ ok: true, status: 200, json: async () => body });
+
+  /** Stands in for the tokeninfo and Calendar endpoints google.js calls. */
+  async function fakeFetch(url, opts = {}) {
+    const method = opts.method || "GET";
+    const body = opts.body ? JSON.parse(opts.body) : null;
+    requests.push({ url, method, body, headers: opts.headers });
+
+    if (url.includes("tokeninfo")) {
+      return ok({ scope: "https://www.googleapis.com/auth/calendar" });
+    }
+    if (url === `${API}/users/me/calendarList`) {
+      return ok({ items: calendars });
+    }
+    if (url === `${API}/calendars` && method === "POST") {
+      calendars.push({ id: "new-cal", summary: body.summary });
+      return ok({ id: "new-cal" });
+    }
+    if (url.endsWith("/events") && method === "POST") {
+      if (rejectEvents) {
+        return { ok: false, status: 403, json: async () => "forbidden" };
+      }
+      return ok({ id: "event-1" });
+    }
+    throw new Error(`Unexpected request: ${method} ${url}`);
+  }
+
+  const sent = (method, suffix) =>
+    requests.filter((r) => r.method === method && r.url.endsWith(suffix));
 
   before(async () => {
-    /** Set up a fake chrome global with identity and storage stubs. */
-    originalChrome = global.chrome;
-    global.chrome = {
-      identity: {
-        getAuthToken: (opts, cb) => cb("FAKE_TOKEN"),
-        getRedirectURL: (suffix) => `https://fakeid.chromiumapp.org/${suffix}`,
-      },
-      storage: {
-        local: {
-          get: (keys, cb) => cb({ google_client_id: "FAKE_CLIENT_ID" }),
-        },
-      },
-      runtime: {
-        getManifest: () => ({ oauth2: { client_id: "FAKE_CLIENT_ID" } }),
-        id: "fakeid",
-      },
-    };
-
-    /** Minimal `self.auth` helpers used by providers under test. */
-    global.self = global.self || {};
-    global.self.auth = {
-      getRedirectUri: (s) => chrome.identity.getRedirectURL(s),
-      buildPKCE: async () => ({ codeVerifier: "v", codeChallenge: "c" }),
-      getProviderPkceVerifier: async () => "v",
-      setProviderPkceVerifier: async () => {},
-      getProviderTokens: async () => null,
-      setProviderTokens: async () => {},
-    };
-
-    /** Load the google provider under test (populates `self.google`). */
-    await import("../src/google.js");
-    /** Stub `fetch` to emulate Google Calendar API responses and tag operations. */
-    originalFetch = global.fetch;
-    lastOpts = null;
-    createdEvents = [];
-    calendarExists = false;
-    createdCalendarId = null;
-    tags = [];
-    global.fetch = async (url, opts) => {
-      lastOpts = opts;
-      // emulate tokeninfo endpoint or other non-calendar endpoints as ok
-      if (url.includes("tokeninfo")) {
-        return {
-          ok: true,
-          json: async () => ({
-            scope: "https://www.googleapis.com/auth/calendar",
-          }),
-          status: 200,
-        };
-      }
-      // Listing calendarList
-      if (url.endsWith("/users/me/calendarList")) {
-        tags.push("CAL_LIST");
-        return {
-          ok: true,
-          json: async () => ({
-            items: calendarExists
-              ? [{ id: "existingCal", summary: "Test" }]
-              : [],
-          }),
-          status: 200,
-        };
-      }
-      // Creating calendar
-      if (url.endsWith("/calendars") && opts && opts.method === "POST") {
-        tags.push("CAL_CREATE");
-        calendarExists = true;
-        createdCalendarId = "evt1";
-        return {
-          ok: true,
-          json: async () => ({ id: createdCalendarId }),
-          status: 200,
-        };
-      }
-      // Inserting event into calendar
-      if (url.includes("/events") && opts && opts.method === "POST") {
-        tags.push("EVENT_POST");
-        const id = `e${createdEvents.length + 1}`;
-        createdEvents.push(id);
-        return { ok: true, json: async () => ({ id }), status: 200 };
-      }
-      // Deleting event or calendar (DELETE)
-      if (opts && opts.method === "DELETE") {
-        tags.push("EVENT_DELETE");
-        return { ok: true, status: 204, json: async () => ({}) };
-      }
-      // Default stub
-      return { ok: true, json: async () => ({}), status: 200 };
-    };
-  });
-
-  after(() => {
-    global.fetch = originalFetch;
-    global.chrome = originalChrome;
-  });
-  /** Suppress noisy console output during the tests. */
-  let origConsoleLog, origConsoleWarn, origConsoleError;
-  before(() => {
-    origConsoleLog = console.log;
-    origConsoleWarn = console.warn;
-    origConsoleError = console.error;
-    console.log = () => {};
-    console.warn = () => {};
-    console.error = () => {};
-  });
-
-  after(() => {
-    console.log = origConsoleLog;
-    console.warn = origConsoleWarn;
-    console.error = origConsoleError;
-  });
-
-  it("Retrieved all calendars", async () => {
-    const calId = await self.google.getOrCreateCalendar("Test");
-    expect(calId).to.be.a("string");
-    expect(tags).to.include("CAL_LIST");
-  });
-
-  it("Can create calendars", async () => {
-    await self.google.getOrCreateCalendar("Test");
-    expect(tags).to.include.oneOf(["CAL_CREATE", "CAL_LIST"]);
-  });
-
-  it("Can create cal events", async () => {
-    const sampleEvent = {
-      CourseName: "TEST",
-      StartDate: "1/1/2025",
-      StartTime: "09:00",
-      EndTime: "10:00",
-    };
-    const result = await self.google.importEvents([sampleEvent]);
-    expect(result).to.have.property("success", true);
-    expect(tags).to.include("EVENT_POST");
-
-    // Verify Authorization header on last request
-    expect(lastOpts).to.be.an("object");
-    expect(lastOpts.headers).to.have.property("Authorization");
-    expect(lastOpts.headers.Authorization).to.include("FAKE_TOKEN");
-  });
-
-  it("Can delete calendars/events (cleanup)", async () => {
-    try {
-      if (createdCalendarId) {
-        await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
-            createdCalendarId,
-          )}`,
-          { method: "DELETE", headers: lastOpts.headers },
-        );
-      } else if (createdEvents.length) {
-        for (const evId of createdEvents) {
-          await fetch(
-            `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
-              await self.google.getOrCreateCalendar("Test"),
-            )}/events/${evId}`,
-            { method: "DELETE", headers: lastOpts.headers },
-          );
-        }
-      }
-    } catch {
-      // Ignore cleanup errors in unit test
+    for (const name of ["chrome", "self", "fetch"]) {
+      originals[name] = global[name];
     }
-    expect(tags).to.include("EVENT_DELETE");
+    for (const name of ["log", "warn", "error"]) {
+      originals[name] = console[name];
+      console[name] = () => {};
+    }
+    global.chrome = {
+      identity: { getAuthToken: (opts, callback) => callback("FAKE_TOKEN") },
+      runtime: {},
+    };
+    global.self = {};
+    global.fetch = fakeFetch;
+    // google.js is a classic script that attaches its API to `self.google`.
+    await import("../src/google.js");
+  });
+
+  after(() => {
+    for (const name of ["chrome", "self", "fetch"]) {
+      global[name] = originals[name];
+    }
+    for (const name of ["log", "warn", "error"]) {
+      console[name] = originals[name];
+    }
+  });
+
+  beforeEach(() => {
+    calendars = [];
+    requests = [];
+    rejectEvents = false;
+  });
+
+  it("reuses a calendar that already has the requested name", async () => {
+    calendars.push({ id: "existing", summary: "UofG Schedule" });
+
+    const id = await self.google.getOrCreateCalendar("UofG Schedule");
+
+    expect(id).to.equal("existing");
+    expect(sent("POST", "/calendars")).to.deep.equal([]);
+  });
+
+  it("creates the calendar when none has the requested name", async () => {
+    calendars.push({ id: "other", summary: "Personal" });
+
+    const id = await self.google.getOrCreateCalendar("UofG Schedule");
+
+    expect(id).to.equal("new-cal");
+    expect(sent("POST", "/calendars")[0].body).to.deep.equal({
+      summary: "UofG Schedule",
+    });
+  });
+
+  it("posts each event to the schedule calendar with the auth token", async () => {
+    const result = await self.google.importEvents([lecture]);
+
+    expect(result).to.deep.equal({ success: true, created: 1, errors: [] });
+    const [post] = sent("POST", "/calendars/new-cal/events");
+    expect(post.headers.Authorization).to.equal("Bearer FAKE_TOKEN");
+    expect(post.body).to.deep.include({
+      summary: "LEC CIS*2500*0101",
+      location: "ROZH 104",
+      description: "Instructor(s): Alice Example\nCredits: 0.5",
+      // 09/04/2025 is a Thursday; the first Mon/Wed/Fri after it is Friday.
+      start: { dateTime: "2025-09-05T09:00:00", timeZone: "America/Toronto" },
+      end: { dateTime: "2025-09-05T10:20:00", timeZone: "America/Toronto" },
+    });
+    expect(post.body.recurrence[0]).to.match(
+      /^RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;UNTIL=\d{8}T\d{6}Z$/,
+    );
+    expect(post.body.recurrence).to.include(
+      "EXDATE;TZID=America/Toronto:20251013T090000",
+    );
+  });
+
+  it("reports events the API rejects instead of counting them", async () => {
+    rejectEvents = true;
+
+    const result = await self.google.importEvents([lecture]);
+
+    expect(result.success).to.equal(false);
+    expect(result.created).to.equal(0);
+    expect(result.errors).to.have.lengthOf(1);
+    expect(result.errors[0].event).to.equal(lecture);
   });
 });
