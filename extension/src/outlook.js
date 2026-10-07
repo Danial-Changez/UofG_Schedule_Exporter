@@ -102,7 +102,7 @@
           };
           await self.auth.setProviderTokens("outlook", updated);
           return { authenticated: true, accessToken: updated.access_token };
-        } catch (e) {
+        } catch {
           return { authenticated: false };
         }
       }
@@ -243,7 +243,7 @@
             Math.round((idx / events.length) * 100),
             created.length,
           );
-        } catch (e) {
+        } catch {
           // ignore callback errors
         }
       }

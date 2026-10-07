@@ -89,7 +89,7 @@ function showProgress(show, provider = "") {
   }
 }
 
-function updateProgress(percent, created, total, provider) {
+function updateProgress(percent, created, total) {
   if (!dom.progressBar) return;
   const pct = Math.min(100, Math.max(0, percent));
   dom.progressBar.style.width = `${pct}%`;
@@ -137,7 +137,7 @@ async function restoreLastView() {
   try {
     const { popupLastView } = await storage.get(["popupLastView"]);
     if (popupLastView === "help") toggleHelp(true);
-  } catch (e) {
+  } catch {
     // ignore storage failures
   }
 }
@@ -242,7 +242,7 @@ async function restoreExportOptions() {
         icsChk.closest(".option-card")?.classList.add("checked");
       }
     }
-  } catch (e) {
+  } catch {
     // On error, default to ICS checked
     const icsChk = document.getElementById("chk-ics");
     if (icsChk) {
@@ -275,7 +275,7 @@ async function restoreSelectedTerms() {
         }
       });
     }
-  } catch (e) {
+  } catch {
     // Ignore storage failures
   }
 }
@@ -372,7 +372,7 @@ function pollImportJob(jobId, provider, totalEvents) {
     if (resp.status === "running") {
       const progress = resp.progress || 0;
       const created = resp.createdCount || 0;
-      updateProgress(progress, created, totalEvents, provider);
+      updateProgress(progress, created, totalEvents);
       setTimeout(check, 500);
       return;
     }

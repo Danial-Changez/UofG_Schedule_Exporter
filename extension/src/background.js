@@ -2,9 +2,6 @@
 // Loads shared auth/provider scripts and routes messages between popup/content and calendar providers.
 importScripts("auth.js", "google.js", "outlook.js");
 
-self.addEventListener("install", (event) => {});
-self.addEventListener("activate", (event) => {});
-
 /**
  * In-memory job map (id -> job object). Persisted entries are saved with
  * keys 'job:<id>' in chrome.storage.local for recovery across restarts.

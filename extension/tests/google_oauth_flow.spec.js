@@ -175,7 +175,7 @@ describe("Google OAuth Integration", () => {
           );
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore cleanup errors in unit test
     }
     expect(tags).to.include("EVENT_DELETE");

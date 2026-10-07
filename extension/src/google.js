@@ -40,13 +40,13 @@
                 return { authenticated: false };
               }
             }
-          } catch (e) {
+          } catch {
             // Ignore tokeninfo errors and fallback to unauthenticated
             return { authenticated: false };
           }
         }
         return { authenticated: false };
-      } catch (e) {
+      } catch {
         return { authenticated: false };
       }
     }
@@ -142,10 +142,10 @@
 
       try {
         bodyJson = await resp.json();
-      } catch (e) {
+      } catch {
         try {
           bodyText = await resp.text();
-        } catch (e2) {
+        } catch {
           bodyText = "<Unable to read body>";
         }
       }
@@ -167,7 +167,7 @@
             token: maskToken(token),
             tokenInfo: ti,
           });
-        } catch (tiErr) {
+        } catch {
           // Ignore tokeninfo failure
         }
       }
@@ -192,33 +192,6 @@
       " | ",
     )}\nCredits: ${ev.Credits || ""}`;
     const location = ev.Location || "";
-
-    /**
-     * Build start and end local datetime strings from StartDate + StartTime
-     * Google Calendar accepts either a dateTime + timeZone or an all-day
-     * date. We will always provide dateTime and specify America/Toronto.
-     * @param {string} dateStr - Date string in M/D/YYYY or MM/DD/YYYY format.
-     * @param {string} timeStr - Time string in '9:00 AM' or '13:00' style.
-     * @returns {string} Local datetime string in 'YYYY-MM-DDTHH:MM:SS'.
-     */
-    function formatLocalDateTime(dateStr, timeStr) {
-      const [m, d, y] = dateStr.split("/").map((s) => parseInt(s, 10));
-      const dt = new Date(
-        `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(
-          2,
-          "0",
-        )} ${timeStr}`,
-      );
-      const local = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(
-        2,
-        "0",
-      )}-${String(dt.getDate()).padStart(2, "0")}T${String(
-        dt.getHours(),
-      ).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}:${String(
-        dt.getSeconds(),
-      ).padStart(2, "0")}`;
-      return local;
-    }
 
     // Parse the start date and calculate duration
     const [sm, sd, sy] = ev.StartDate.split("/").map((s) => parseInt(s, 10));
@@ -503,7 +476,9 @@
         );
         return { access_token: token };
       } catch (e) {
-        throw new Error("Authentication failed: " + (e.message || e));
+        throw new Error("Authentication failed: " + (e.message || e), {
+          cause: e,
+        });
       }
     }
     // If chrome.identity is not available, fail authentication.
@@ -542,7 +517,9 @@
           );
           auth = { authenticated: true, accessToken: token };
         } catch (e) {
-          throw new Error("Authentication failed: " + (e.message || e));
+          throw new Error("Authentication failed: " + (e.message || e), {
+            cause: e,
+          });
         }
       } else {
         throw new Error("Authentication not available in this environment");
@@ -589,7 +566,7 @@
             Math.round((idx / events.length) * 100),
             created.length,
           );
-        } catch (e) {
+        } catch {
           // ignore callback errors
         }
       }
@@ -601,100 +578,12 @@
     return { success: errors.length === 0, created: created.length, errors };
   }
 
-  /**
-   * Normalize the page `result` object (or accept already-normalized
-   * events) and import them into a calendar. Returns the import summary.
-   * @async
-   * @param {Object|Array} rawResult - Page result object or normalized events
-   * @param {Array<string>|null} [selectedTermCodes=null]
-   * @param {function(number):void|null} [progressCallback=null]
-   * @returns {Promise<{success:boolean,created:number,errors:Array}>}
-   */
-  async function importFromPageResult(
-    rawResult,
-    selectedTermCodes = null,
-    progressCallback = null,
-  ) {
-    let events;
-    if (typeof rawResult === "object") {
-      events = rawResult;
-    } else {
-      throw new Error(
-        "Cannot normalize provided rawResult; pass normalized events or ensure ics-generator is available",
-      );
-    }
-
-    if (!events || events.length === 0)
-      return { success: true, created: 0, errors: [] };
-
-    // Ensure authenticated (interactive if needed)
-    let auth = await ensureAuth();
-    if (!auth.authenticated) {
-      if (
-        typeof chrome !== "undefined" &&
-        chrome.identity &&
-        chrome.identity.getAuthToken
-      ) {
-        try {
-          const token = await new Promise((res, rej) =>
-            chrome.identity.getAuthToken({ interactive: true }, (t) => {
-              if (chrome.runtime.lastError)
-                return rej(chrome.runtime.lastError);
-              res(t);
-            }),
-          );
-          auth = { authenticated: true, accessToken: token };
-        } catch (e) {
-          throw new Error("Authentication failed: " + (e.message || e));
-        }
-      } else {
-        throw new Error("Authentication not available in this environment");
-      }
-    }
-
-    // Ensure calendar exists (create or reuse 'UofG Schedule')
-    const calendarId = await getOrCreateCalendar(
-      "UofG Schedule",
-      auth.accessToken,
-    );
-
-    // Insert events into created calendar
-    const created = [];
-    const errors = [];
-    for (let i = 0; i < events.length; i++) {
-      try {
-        const payload = eventToGooglePayload(events[i]);
-        console.log("Google: apiRequest payload", payload);
-        const tokenToUse = auth?.accessToken ?? null;
-        const resp = await apiRequest(
-          `calendars/${encodeURIComponent(calendarId)}/events`,
-          "POST",
-          payload,
-          tokenToUse,
-        );
-        created.push(resp.id || null);
-        if (progressCallback)
-          progressCallback(Math.round(((i + 1) / events.length) * 100));
-      } catch (e) {
-        console.error("Google: event import error (page result)", {
-          i,
-          status: e && e.status,
-          body: e && e.body,
-          error: e,
-        });
-        errors.push({ event: events[i], error: e && (e.body || e.message) });
-      }
-    }
-    return { success: errors.length === 0, created: created.length, errors };
-  }
-
   // Public API: exported functions (listed here for quick reference).
   // Implementations are defined above. Attach them to self.google at the end
   // so the module reads top-to-bottom with helpers first.
   self.google = {
     authenticate,
     importEvents,
-    importFromPageResult,
     getOrCreateCalendar,
     ensureAuth,
     clearCachedChromeToken,

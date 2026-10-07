@@ -47,7 +47,7 @@ function extractScheduleData() {
       script.onload = () =>
         script.parentNode && script.parentNode.removeChild(script);
       (document.head || document.documentElement).appendChild(script);
-    } catch (e) {
+    } catch {
       console.log("Failed to run internal script, falling back to regex");
     }
 

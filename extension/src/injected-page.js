@@ -10,7 +10,7 @@
         "*",
       );
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 })();
