@@ -10,7 +10,7 @@
         chrome.storage.local.get(keys, (items) => {
           if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
           resolve(items);
-        })
+        }),
       );
     },
     async set(payload) {
@@ -18,7 +18,7 @@
         chrome.storage.local.set(payload, () => {
           if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
           resolve();
-        })
+        }),
       );
     },
   };
@@ -35,7 +35,10 @@
     crypto.getRandomValues(arr);
     const codeVerifier = base64UrlEncode(arr);
     const encoder = new TextEncoder();
-    const digest = await crypto.subtle.digest("SHA-256", encoder.encode(codeVerifier));
+    const digest = await crypto.subtle.digest(
+      "SHA-256",
+      encoder.encode(codeVerifier),
+    );
     const codeChallenge = base64UrlEncode(digest);
     return { codeVerifier, codeChallenge };
   }
@@ -71,12 +74,12 @@
           if (chrome.runtime.lastError || !redirectUrl) {
             return reject(
               chrome.runtime.lastError ||
-                new Error("No redirect URL returned from auth flow")
+                new Error("No redirect URL returned from auth flow"),
             );
           }
           resolve(redirectUrl);
-        }
-      )
+        },
+      ),
     );
   }
 

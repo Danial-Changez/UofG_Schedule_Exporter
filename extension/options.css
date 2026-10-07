@@ -7,12 +7,14 @@
   --accent-2: #ffb81c; /* Gryphon gold */
 }
 body {
-  font-family: Inter, Segoe UI, system-ui, Arial, sans-serif;
-  background: radial-gradient(
-      circle at 20% 20%,
-      rgba(194, 4, 48, 0.12),
-      transparent 30%
-    ),
+  font-family:
+    Inter,
+    Segoe UI,
+    system-ui,
+    Arial,
+    sans-serif;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(194, 4, 48, 0.12), transparent 30%),
     linear-gradient(180deg, #0c0b0b, #120f0f);
   color: var(--text);
   margin: 0;
@@ -43,7 +45,9 @@ body {
   border: 1px solid rgba(255, 184, 28, 0.25);
   background: rgba(255, 255, 255, 0.02);
   color: var(--text);
-  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 .field input:focus {
   border-color: var(--accent-2);
@@ -62,7 +66,10 @@ button {
   color: #f8f2e8;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 button:hover {

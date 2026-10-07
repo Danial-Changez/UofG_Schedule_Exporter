@@ -14,7 +14,7 @@
           chrome.identity.getAuthToken({ interactive: false }, (t) => {
             if (chrome.runtime.lastError) return rej(chrome.runtime.lastError);
             res(t);
-          })
+          }),
         );
 
         if (token) {
@@ -22,8 +22,8 @@
           try {
             const infoResp = await fetch(
               `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(
-                token
-              )}`
+                token,
+              )}`,
             );
 
             if (infoResp.ok) {
@@ -67,7 +67,7 @@
         chrome.identity.getAuthToken({ interactive: false }, (t) => {
           if (chrome.runtime.lastError) return rej(chrome.runtime.lastError);
           res(t);
-        })
+        }),
       );
       if (token && chrome.identity.removeCachedAuthToken) {
         chrome.identity.removeCachedAuthToken({ token });
@@ -92,7 +92,7 @@
     path,
     method = "GET",
     body = null,
-    accessToken = null
+    accessToken = null,
   ) {
     const token = accessToken || (await ensureAuth()).accessToken;
 
@@ -159,8 +159,8 @@
         try {
           const ti = await fetch(
             `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(
-              token
-            )}`
+              token,
+            )}`,
           ).then((r) => (r.ok ? r.json() : null));
           err.tokenInfo = ti;
           console.warn("Google: tokenInfo for failing token", {
@@ -189,7 +189,7 @@
     }`.trim();
 
     const description = `Instructor(s): ${(ev.Instructors || []).join(
-      " | "
+      " | ",
     )}\nCredits: ${ev.Credits || ""}`;
     const location = ev.Location || "";
 
@@ -206,24 +206,28 @@
       const dt = new Date(
         `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(
           2,
-          "0"
-        )} ${timeStr}`
+          "0",
+        )} ${timeStr}`,
       );
       const local = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(
         2,
-        "0"
+        "0",
       )}-${String(dt.getDate()).padStart(2, "0")}T${String(
-        dt.getHours()
+        dt.getHours(),
       ).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}:${String(
-        dt.getSeconds()
+        dt.getSeconds(),
       ).padStart(2, "0")}`;
       return local;
     }
 
     // Parse the start date and calculate duration
     const [sm, sd, sy] = ev.StartDate.split("/").map((s) => parseInt(s, 10));
-    let startDt = new Date(`${sy}-${String(sm).padStart(2, "0")}-${String(sd).padStart(2, "0")} ${ev.StartTime}`);
-    let endDt = new Date(`${sy}-${String(sm).padStart(2, "0")}-${String(sd).padStart(2, "0")} ${ev.EndTime}`);
+    let startDt = new Date(
+      `${sy}-${String(sm).padStart(2, "0")}-${String(sd).padStart(2, "0")} ${ev.StartTime}`,
+    );
+    let endDt = new Date(
+      `${sy}-${String(sm).padStart(2, "0")}-${String(sd).padStart(2, "0")} ${ev.EndTime}`,
+    );
     const durationMs = endDt.getTime() - startDt.getTime();
 
     // If event has recurring days, advance startDt to first matching weekday
@@ -231,9 +235,11 @@
     if (ev.DaysOfWeek) {
       const tokenRegex = /Th|M|T|W|F/g;
       const tokenToDay = { M: 1, T: 2, W: 3, Th: 4, F: 5 }; // JS weekday numbers
-      const tokens = (ev.DaysOfWeek.match(tokenRegex) || []).map((t) => t.trim());
+      const tokens = (ev.DaysOfWeek.match(tokenRegex) || []).map((t) =>
+        t.trim(),
+      );
       targetDays = tokens.map((t) => tokenToDay[t]).filter((n) => n != null);
-      
+
       if (targetDays.length > 0) {
         // Advance startDt up to 7 days to match one of targetDays
         let attempts = 0;
@@ -268,7 +274,7 @@
       const tokenRegex = /Th|M|T|W|F/g;
       const tokenToBy = { M: "MO", T: "TU", W: "WE", Th: "TH", F: "FR" };
       const tokens = (ev.DaysOfWeek.match(tokenRegex) || []).map((t) =>
-        t.trim()
+        t.trim(),
       );
       const days = tokens.map((t) => tokenToBy[t]).filter(Boolean);
 
@@ -276,22 +282,22 @@
         const [em, ed, ey] = ev.EndDate.split("/").map((s) => parseInt(s, 10));
         const until = new Date(ey, em - 1, ed, 23, 59, 59);
         const untilStr = `${until.getUTCFullYear()}${String(
-          until.getUTCMonth() + 1
+          until.getUTCMonth() + 1,
         ).padStart(2, "0")}${String(until.getUTCDate()).padStart(
           2,
-          "0"
+          "0",
         )}T${String(until.getUTCHours()).padStart(2, "0")}${String(
-          until.getUTCMinutes()
+          until.getUTCMinutes(),
         ).padStart(2, "0")}${String(until.getUTCSeconds()).padStart(2, "0")}Z`;
-        
+
         resource.recurrence = [
           `RRULE:FREQ=WEEKLY;BYDAY=${days.join(",")};UNTIL=${untilStr}`,
         ];
-        
+
         // Add EXDATE entries for reading weeks and exam period (UofG breaks)
         // Only exclude exam period for regular classes, not for EXAM events
         const isExamEvent = ev.InstructionalMethod === "EXAM";
-        const breakDates = isExamEvent 
+        const breakDates = isExamEvent
           ? getBreakDatesForEventWithoutExams(startDt, until, targetDays)
           : getBreakDatesForEvent(startDt, until, targetDays);
         for (const breakDate of breakDates) {
@@ -306,7 +312,7 @@
 
     return resource;
   }
-  
+
   /**
    * Get the Nth occurrence of a specific weekday in a given month.
    */
@@ -326,21 +332,37 @@
    */
   function getReadingWeeks(fallYear) {
     const breaks = [];
-    
+
     // Fall Study Break: 2nd Monday of October is Thanksgiving
     const thanksgiving = getNthWeekdayOfMonth(fallYear, 9, 1, 2);
-    const fallBreakStart = new Date(thanksgiving.getFullYear(), thanksgiving.getMonth(), thanksgiving.getDate() - 2);
-    const fallBreakEnd = new Date(thanksgiving.getFullYear(), thanksgiving.getMonth(), thanksgiving.getDate() + 1);
+    const fallBreakStart = new Date(
+      thanksgiving.getFullYear(),
+      thanksgiving.getMonth(),
+      thanksgiving.getDate() - 2,
+    );
+    const fallBreakEnd = new Date(
+      thanksgiving.getFullYear(),
+      thanksgiving.getMonth(),
+      thanksgiving.getDate() + 1,
+    );
     breaks.push({ start: fallBreakStart, end: fallBreakEnd });
-    
+
     // Winter Reading Week: 3rd Monday of February is Family Day
     const winterYear = fallYear + 1;
     const familyDay = getNthWeekdayOfMonth(winterYear, 1, 1, 3);
     breaks.push({
-      start: new Date(familyDay.getFullYear(), familyDay.getMonth(), familyDay.getDate()),
-      end: new Date(familyDay.getFullYear(), familyDay.getMonth(), familyDay.getDate() + 4)
+      start: new Date(
+        familyDay.getFullYear(),
+        familyDay.getMonth(),
+        familyDay.getDate(),
+      ),
+      end: new Date(
+        familyDay.getFullYear(),
+        familyDay.getMonth(),
+        familyDay.getDate() + 4,
+      ),
     });
-    
+
     return breaks;
   }
 
@@ -350,24 +372,32 @@
    */
   function getBreakDatesForEventWithoutExams(eventStart, eventEnd, targetDays) {
     const excludeDates = [];
-    
+
     // Determine academic year from event start
     const startMonth = eventStart.getMonth();
-    const fallYear = startMonth >= 7 ? eventStart.getFullYear() : eventStart.getFullYear() - 1;
-    
+    const fallYear =
+      startMonth >= 7 ? eventStart.getFullYear() : eventStart.getFullYear() - 1;
+
     // Get reading weeks only (no exam period)
-    const breaks = [...getReadingWeeks(fallYear), ...getReadingWeeks(fallYear + 1)];
-    
+    const breaks = [
+      ...getReadingWeeks(fallYear),
+      ...getReadingWeeks(fallYear + 1),
+    ];
+
     for (const breakPeriod of breaks) {
       const current = new Date(breakPeriod.start);
       while (current <= breakPeriod.end) {
-        if (current >= eventStart && current <= eventEnd && targetDays.includes(current.getDay())) {
+        if (
+          current >= eventStart &&
+          current <= eventEnd &&
+          targetDays.includes(current.getDay())
+        ) {
           excludeDates.push(new Date(current));
         }
         current.setDate(current.getDate() + 1);
       }
     }
-    
+
     return excludeDates;
   }
 
@@ -391,28 +421,36 @@
    */
   function getBreakDatesForEvent(eventStart, eventEnd, targetDays) {
     const excludeDates = [];
-    
+
     // Determine academic year from event start
     const startMonth = eventStart.getMonth();
-    const fallYear = startMonth >= 7 ? eventStart.getFullYear() : eventStart.getFullYear() - 1;
-    
+    const fallYear =
+      startMonth >= 7 ? eventStart.getFullYear() : eventStart.getFullYear() - 1;
+
     // Get reading weeks
-    const breaks = [...getReadingWeeks(fallYear), ...getReadingWeeks(fallYear + 1)];
-    
+    const breaks = [
+      ...getReadingWeeks(fallYear),
+      ...getReadingWeeks(fallYear + 1),
+    ];
+
     // Add exam period (last 2 weeks of the term) to breaks
     const examPeriod = getExamPeriod(eventEnd);
     breaks.push(examPeriod);
-    
+
     for (const breakPeriod of breaks) {
       const current = new Date(breakPeriod.start);
       while (current <= breakPeriod.end) {
-        if (current >= eventStart && current <= eventEnd && targetDays.includes(current.getDay())) {
+        if (
+          current >= eventStart &&
+          current <= eventEnd &&
+          targetDays.includes(current.getDay())
+        ) {
           excludeDates.push(new Date(current));
         }
         current.setDate(current.getDate() + 1);
       }
     }
-    
+
     return excludeDates;
   }
 
@@ -425,14 +463,14 @@
    */
   async function getOrCreateCalendar(
     calendarName = "UofG Schedule",
-    accessToken = null
+    accessToken = null,
   ) {
     // List calendars and try to find by summary
     const list = await apiRequest(
       "users/me/calendarList",
       "GET",
       null,
-      accessToken
+      accessToken,
     );
     const existing = (list.items || []).find((c) => c.summary === calendarName);
     if (existing) return existing.id;
@@ -442,12 +480,11 @@
       "calendars",
       "POST",
       { summary: calendarName },
-      accessToken
+      accessToken,
     );
     return created.id;
   }
 
-  
   /**
    * Acquire an interactive Google OAuth access token via chrome.identity.
    *
@@ -462,7 +499,7 @@
           chrome.identity.getAuthToken({ interactive: true }, (t) => {
             if (chrome.runtime.lastError) return rej(chrome.runtime.lastError);
             res(t);
-          })
+          }),
         );
         return { access_token: token };
       } catch (e) {
@@ -488,7 +525,7 @@
     let auth = await ensureAuth();
     if (!auth.authenticated) {
       console.log(
-        "Google: not authenticated; invoking chrome.identity interactive flow"
+        "Google: not authenticated; invoking chrome.identity interactive flow",
       );
       if (
         typeof chrome !== "undefined" &&
@@ -501,7 +538,7 @@
               if (chrome.runtime.lastError)
                 return rej(chrome.runtime.lastError);
               res(t);
-            })
+            }),
           );
           auth = { authenticated: true, accessToken: token };
         } catch (e) {
@@ -523,13 +560,16 @@
         const payload = eventToGooglePayload(ev);
         // Ensure or create the target calendar named 'UofG Schedule'
         const tokenToUse = auth?.accessToken ?? null;
-        const calendarId = await getOrCreateCalendar("UofG Schedule", tokenToUse);
+        const calendarId = await getOrCreateCalendar(
+          "UofG Schedule",
+          tokenToUse,
+        );
         console.log("Google: apiRequest payload", payload);
         const resp = await apiRequest(
           `calendars/${encodeURIComponent(calendarId)}/events`,
           "POST",
           payload,
-          tokenToUse
+          tokenToUse,
         );
         console.log(`Google: event inserted ${idx}`, { id: resp.id });
         created.push(ev);
@@ -545,7 +585,10 @@
       }
       if (progressCallback) {
         try {
-          progressCallback(Math.round((idx / events.length) * 100), created.length);
+          progressCallback(
+            Math.round((idx / events.length) * 100),
+            created.length,
+          );
         } catch (e) {
           // ignore callback errors
         }
@@ -570,14 +613,14 @@
   async function importFromPageResult(
     rawResult,
     selectedTermCodes = null,
-    progressCallback = null
+    progressCallback = null,
   ) {
     let events;
     if (typeof rawResult === "object") {
       events = rawResult;
     } else {
       throw new Error(
-        "Cannot normalize provided rawResult; pass normalized events or ensure ics-generator is available"
+        "Cannot normalize provided rawResult; pass normalized events or ensure ics-generator is available",
       );
     }
 
@@ -598,7 +641,7 @@
               if (chrome.runtime.lastError)
                 return rej(chrome.runtime.lastError);
               res(t);
-            })
+            }),
           );
           auth = { authenticated: true, accessToken: token };
         } catch (e) {
@@ -610,7 +653,10 @@
     }
 
     // Ensure calendar exists (create or reuse 'UofG Schedule')
-    const calendarId = await getOrCreateCalendar("UofG Schedule", auth.accessToken);
+    const calendarId = await getOrCreateCalendar(
+      "UofG Schedule",
+      auth.accessToken,
+    );
 
     // Insert events into created calendar
     const created = [];
@@ -624,7 +670,7 @@
           `calendars/${encodeURIComponent(calendarId)}/events`,
           "POST",
           payload,
-          tokenToUse
+          tokenToUse,
         );
         created.push(resp.id || null);
         if (progressCallback)

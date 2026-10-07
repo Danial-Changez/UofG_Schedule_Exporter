@@ -18,7 +18,7 @@ const storage = {
       chrome.storage.local.get(keys, (items) => {
         if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
         resolve(items);
-      })
+      }),
     );
   },
   async set(payload) {
@@ -26,7 +26,7 @@ const storage = {
       chrome.storage.local.set(payload, () => {
         if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
         resolve();
-      })
+      }),
     );
   },
 };

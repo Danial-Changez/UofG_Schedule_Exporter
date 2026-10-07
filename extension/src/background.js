@@ -35,8 +35,8 @@ async function saveJob(job) {
 async function loadJob(jobId) {
   return new Promise((resolve) =>
     chrome.storage.local.get(`job:${jobId}`, (res) =>
-      resolve(res[`job:${jobId}`])
-    )
+      resolve(res[`job:${jobId}`]),
+    ),
   );
 }
 
@@ -62,12 +62,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             let res;
             if (provider === "google") {
               console.log("background: running google import for job", jobId);
-              if (!events) throw new Error("import via ICS is removed; pass normalized events");
-              res = await self.google.importEvents(events, (p, c) => updateProgress(jobId, p, c));
+              if (!events)
+                throw new Error(
+                  "import via ICS is removed; pass normalized events",
+                );
+              res = await self.google.importEvents(events, (p, c) =>
+                updateProgress(jobId, p, c),
+              );
             } else if (provider === "outlook") {
               console.log("background: running outlook import for job", jobId);
-              if (!events) throw new Error("import via ICS is removed; pass normalized events");
-              res = await self.outlook.importEvents(events, (p, c) => updateProgress(jobId, p, c));
+              if (!events)
+                throw new Error(
+                  "import via ICS is removed; pass normalized events",
+                );
+              res = await self.outlook.importEvents(events, (p, c) =>
+                updateProgress(jobId, p, c),
+              );
             } else {
               throw new Error("Unsupported provider");
             }

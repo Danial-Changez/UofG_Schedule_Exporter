@@ -17,7 +17,12 @@ html,
 body {
   margin: 0;
   padding: 0;
-  font-family: Inter, Segoe UI, system-ui, Arial, sans-serif;
+  font-family:
+    Inter,
+    Segoe UI,
+    system-ui,
+    Arial,
+    sans-serif;
   background: transparent;
 }
 
@@ -25,7 +30,8 @@ body {
   width: 320px; /* compact popup */
   padding: 16px;
   color: var(--text);
-  background: radial-gradient(circle at 15% 15%, rgba(194, 4, 48, 0.08), transparent 32%),
+  background:
+    radial-gradient(circle at 15% 15%, rgba(194, 4, 48, 0.08), transparent 32%),
     linear-gradient(180deg, #0f0d0d, #1a0f12);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(255, 184, 28, 0.18);
@@ -67,7 +73,9 @@ button.primary {
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
@@ -134,9 +142,15 @@ button.ghost {
   padding: 10px;
   border-radius: 10px;
   border: 1px solid rgba(255, 184, 28, 0.2);
-  background: linear-gradient(180deg, rgba(255, 184, 28, 0.04), rgba(194, 4, 48, 0.04));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 184, 28, 0.04),
+    rgba(194, 4, 48, 0.04)
+  );
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease,
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
     border-color 0.12s ease;
 }
 
@@ -291,14 +305,28 @@ button.ghost {
   display: block;
 }
 @keyframes help-open {
-  from { transform: scale(0.98); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 @keyframes help-close {
-  from { transform: scale(1); opacity: 1; }
-  to { transform: scale(0.98); opacity: 0; }
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.98);
+    opacity: 0;
+  }
 }
-.help-content { color: var(--text); }
+.help-content {
+  color: var(--text);
+}
 .close-help {
   position: absolute;
   right: 8px;
@@ -309,8 +337,16 @@ button.ghost {
   font-size: 14px;
   cursor: pointer;
 }
-.help-images { display:flex; gap:8px; margin-top:8px }
-.help-img { border-radius:8px; overflow:hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+.help-images {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.help-img {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
 
 /* Progress bar styles */
 .progress-container {
@@ -364,7 +400,7 @@ button.ghost {
 }
 
 .progress-bar::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -380,8 +416,12 @@ button.ghost {
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .progress-detail {

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -17,10 +17,14 @@
       </div>
 
       <div id="helpView" class="help-view" aria-hidden="true">
-        <button id="closeHelp" class="close-help" aria-label="Close help">✕</button>
+        <button id="closeHelp" class="close-help" aria-label="Close help">
+          ✕
+        </button>
         <div class="help-content">
           <h3>Quick Start</h3>
-          <p class="muted-note">Use the checkboxes to select export targets and terms.</p>
+          <p class="muted-note">
+            Use the checkboxes to select export targets and terms.
+          </p>
           <ol>
             <li>Open your timetable page.</li>
             <li>From the popup, select the desired export targets.</li>
@@ -30,11 +34,44 @@
           <div class="help-images">
             <!-- Small inline SVG screenshots to avoid external files -->
             <div class="help-img" title="Popup preview">
-              <svg width="220" height="120" viewBox="0 0 220 120" xmlns="http://www.w3.org/2000/svg">
-                <rect width="220" height="120" rx="8" fill="#071029" stroke="#0b1220" />
-                <rect x="12" y="12" width="196" height="18" rx="4" fill="#7c3aed" />
-                <rect x="12" y="36" width="120" height="18" rx="4" fill="#0b1220" stroke="#1f2a3a" />
-                <rect x="12" y="60" width="180" height="28" rx="6" fill="#7c3aed" />
+              <svg
+                width="220"
+                height="120"
+                viewBox="0 0 220 120"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect
+                  width="220"
+                  height="120"
+                  rx="8"
+                  fill="#071029"
+                  stroke="#0b1220"
+                />
+                <rect
+                  x="12"
+                  y="12"
+                  width="196"
+                  height="18"
+                  rx="4"
+                  fill="#7c3aed"
+                />
+                <rect
+                  x="12"
+                  y="36"
+                  width="120"
+                  height="18"
+                  rx="4"
+                  fill="#0b1220"
+                  stroke="#1f2a3a"
+                />
+                <rect
+                  x="12"
+                  y="60"
+                  width="180"
+                  height="28"
+                  rx="6"
+                  fill="#7c3aed"
+                />
               </svg>
             </div>
           </div>
@@ -102,7 +139,11 @@
       <div id="status"></div>
 
       <!-- Progress bar for import jobs -->
-      <div id="progress-container" class="progress-container" style="display: none;">
+      <div
+        id="progress-container"
+        class="progress-container"
+        style="display: none"
+      >
         <div class="progress-header">
           <span id="progress-label">Importing events...</span>
           <span id="progress-percent">0%</span>

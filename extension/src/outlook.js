@@ -8,7 +8,7 @@
    */
   async function getConfig() {
     return new Promise((res) =>
-      chrome.storage.local.get(["outlook_client_id"], (items) => res(items))
+      chrome.storage.local.get(["outlook_client_id"], (items) => res(items)),
     );
   }
 
@@ -22,7 +22,7 @@
     const clientId = cfg.outlook_client_id;
     if (!clientId)
       throw new Error(
-        "Outlook client_id not set in chrome.storage.local.outlook_client_id"
+        "Outlook client_id not set in chrome.storage.local.outlook_client_id",
       );
 
     const redirectUri = self.auth.getRedirectUri("oauth2");
@@ -31,7 +31,7 @@
 
     const scope = encodeURIComponent("offline_access Calendars.ReadWrite");
     const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(
-      redirectUri
+      redirectUri,
     )}&response_mode=query&scope=${scope}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
 
     const redirect = await self.auth.launchAuthUrl(authUrl);
@@ -53,7 +53,7 @@
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: body.toString(),
-      }
+      },
     );
     if (!tokenResp.ok) throw new Error("Token exchange failed");
     const tokens = await tokenResp.json();
@@ -90,7 +90,7 @@
               method: "POST",
               headers: { "Content-Type": "application/x-www-form-urlencoded" },
               body: body.toString(),
-            }
+            },
           );
           if (!resp.ok) throw new Error("Refresh failed");
           const t = await resp.json();
@@ -124,7 +124,7 @@
     path,
     method = "GET",
     body = null,
-    accessToken = null
+    accessToken = null,
   ) {
     const token = accessToken || (await ensureAuth()).accessToken;
     if (!token) throw new Error("No access token");
@@ -155,7 +155,7 @@
     const body = {
       contentType: "text",
       content: `Instructor(s): ${(ev.Instructors || []).join(
-        " | "
+        " | ",
       )}\nCredits: ${ev.Credits || ""}`,
     };
     const location = { displayName: ev.Location || "" };
@@ -165,8 +165,8 @@
       const dt = new Date(
         `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(
           2,
-          "0"
-        )} ${timeStr}`
+          "0",
+        )} ${timeStr}`,
       );
       return {
         dateTime: dt.toISOString(),
@@ -182,8 +182,16 @@
     if (ev.DaysOfWeek && ev.EndDate) {
       // Tokenize DaysOfWeek (handle 'Th' before 'T') and map to Graph daysOfWeek
       const tokenRegex = /Th|M|T|W|F/g;
-      const tokenToGraph = { M: "monday", T: "tuesday", W: "wednesday", Th: "thursday", F: "friday" };
-      const tokens = (String(ev.DaysOfWeek).match(tokenRegex) || []).map((t) => t.trim());
+      const tokenToGraph = {
+        M: "monday",
+        T: "tuesday",
+        W: "wednesday",
+        Th: "thursday",
+        F: "friday",
+      };
+      const tokens = (String(ev.DaysOfWeek).match(tokenRegex) || []).map((t) =>
+        t.trim(),
+      );
       const days = tokens.map((t) => tokenToGraph[t]).filter(Boolean);
 
       resource.recurrence = {
@@ -191,11 +199,15 @@
         range: {
           type: "endDate",
           startDate: (() => {
-            const [m, d, y] = ev.StartDate.split("/").map((s) => s.padStart(2, "0"));
+            const [m, d, y] = ev.StartDate.split("/").map((s) =>
+              s.padStart(2, "0"),
+            );
             return `${y}-${m}-${d}`;
           })(),
           endDate: (() => {
-            const [m, d, y] = ev.EndDate.split("/").map((s) => s.padStart(2, "0"));
+            const [m, d, y] = ev.EndDate.split("/").map((s) =>
+              s.padStart(2, "0"),
+            );
             return `${y}-${m}-${d}`;
           })(),
         },
@@ -227,7 +239,10 @@
       }
       if (progressCallback) {
         try {
-          progressCallback(Math.round((idx / events.length) * 100), created.length);
+          progressCallback(
+            Math.round((idx / events.length) * 100),
+            created.length,
+          );
         } catch (e) {
           // ignore callback errors
         }
@@ -235,7 +250,7 @@
     }
     return { success: errors.length === 0, created: created.length, errors };
   }
-  
+
   self.outlook = {
     authenticate,
     importEvents,

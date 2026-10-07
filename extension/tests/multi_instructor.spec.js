@@ -8,7 +8,7 @@ import * as gen from "../src/ics-generator.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const sample = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "fixtures", "medium.json"), "utf8")
+  fs.readFileSync(path.join(__dirname, "fixtures", "medium.json"), "utf8"),
 );
 
 describe("Multi-instructor handling", () => {

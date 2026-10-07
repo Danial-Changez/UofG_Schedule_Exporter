@@ -161,17 +161,17 @@ describe("Google OAuth Integration", () => {
       if (createdCalendarId) {
         await fetch(
           `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
-            createdCalendarId
+            createdCalendarId,
           )}`,
-          { method: "DELETE", headers: lastOpts.headers }
+          { method: "DELETE", headers: lastOpts.headers },
         );
       } else if (createdEvents.length) {
         for (const evId of createdEvents) {
           await fetch(
             `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
-              await self.google.getOrCreateCalendar("Test")
+              await self.google.getOrCreateCalendar("Test"),
             )}/events/${evId}`,
-            { method: "DELETE", headers: lastOpts.headers }
+            { method: "DELETE", headers: lastOpts.headers },
           );
         }
       }

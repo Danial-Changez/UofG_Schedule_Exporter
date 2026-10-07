@@ -54,16 +54,16 @@ Export your University of Guelph WebAdvisor schedule to ICS or send it straight 
 
 ## File Map
 
-| Component          | Path                  | Purpose                                             |
-| ------------------ | --------------------- | --------------------------------------------------- |
-| Content script     | `src/content.js`      | Detects schedule pages and extracts `result`.       |
-| Injected helper    | `src/injected-page.js` | Runs in page context to post schedule data.         |
-| Popup UI           | `src/popup.js`         | Term selection, action toggles, job polling/results.|
-| ICS + normalization| `src/ics-generator.js`| Builds normalized events and ICS text.              |
-| Background worker  | `src/background.js`   | Manages import jobs and storage.                    |
-| Google provider    | `src/google.js`       | Calendar REST auth + event creation.                |
-| Outlook provider   | `src/outlook.js`      | Microsoft Graph auth + event creation.              |
-| Options page       | `src/options.js`      | Persist alternate client IDs and show help.         |
+| Component           | Path                   | Purpose                                              |
+| ------------------- | ---------------------- | ---------------------------------------------------- |
+| Content script      | `src/content.js`       | Detects schedule pages and extracts `result`.        |
+| Injected helper     | `src/injected-page.js` | Runs in page context to post schedule data.          |
+| Popup UI            | `src/popup.js`         | Term selection, action toggles, job polling/results. |
+| ICS + normalization | `src/ics-generator.js` | Builds normalized events and ICS text.               |
+| Background worker   | `src/background.js`    | Manages import jobs and storage.                     |
+| Google provider     | `src/google.js`        | Calendar REST auth + event creation.                 |
+| Outlook provider    | `src/outlook.js`       | Microsoft Graph auth + event creation.               |
+| Options page        | `src/options.js`       | Persist alternate client IDs and show help.          |
 
 ## Testing
 

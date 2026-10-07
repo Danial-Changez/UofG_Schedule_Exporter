@@ -7,7 +7,7 @@
     if (typeof window.result !== "undefined") {
       window.postMessage(
         { type: "SCHEDULE_RESULT", data: JSON.stringify(window.result) },
-        "*"
+        "*",
       );
     }
   } catch (e) {

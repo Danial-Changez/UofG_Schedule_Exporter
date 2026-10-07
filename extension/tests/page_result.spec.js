@@ -9,7 +9,7 @@ import * as gen from "../src/ics-generator.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const fixture = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "fixtures", "small.json"), "utf8")
+  fs.readFileSync(path.join(__dirname, "fixtures", "small.json"), "utf8"),
 );
 
 describe("Page result integration", function () {

@@ -27,7 +27,7 @@ const storage = {
       chrome.storage.local.get(keys, (items) => {
         if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
         resolve(items);
-      })
+      }),
     );
   },
   async set(payload) {
@@ -35,7 +35,7 @@ const storage = {
       chrome.storage.local.set(payload, () => {
         if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
         resolve();
-      })
+      }),
     );
   },
 };
@@ -58,7 +58,7 @@ function showProgress(show, provider = "") {
   console.log("showProgress called:", show, provider);
   dom.progressContainer.style.display = show ? "flex" : "none";
   dom.progressContainer.className = "progress-container";
-  
+
   // Hide/show main content when progress bar is visible
   if (dom.controls) {
     dom.controls.style.display = show ? "none" : "flex";
@@ -74,9 +74,14 @@ function showProgress(show, provider = "") {
   if (footer) {
     footer.style.display = show ? "none" : "flex";
   }
-  
+
   if (show) {
-    const providerName = provider === "google" ? "Google Calendar" : provider === "outlook" ? "Outlook Calendar" : "calendar";
+    const providerName =
+      provider === "google"
+        ? "Google Calendar"
+        : provider === "outlook"
+          ? "Outlook Calendar"
+          : "calendar";
     dom.progressLabel.innerText = `Importing to ${providerName}...`;
     dom.progressPercent.innerText = "0%";
     dom.progressBar.style.width = "0%";
@@ -89,7 +94,7 @@ function updateProgress(percent, created, total, provider) {
   const pct = Math.min(100, Math.max(0, percent));
   dom.progressBar.style.width = `${pct}%`;
   dom.progressPercent.innerText = `${Math.round(pct)}%`;
-  
+
   if (total > 0) {
     dom.progressDetail.innerText = `Created ${created} of ${total} events`;
   }
@@ -101,19 +106,22 @@ function setProgressComplete(success, message) {
   dom.progressBar.style.width = "100%";
   dom.progressPercent.innerText = success ? "Done!" : "Error";
   dom.progressDetail.innerText = message;
-  
+
   // Auto-hide after a delay and restore main UI
-  setTimeout(() => {
-    dom.progressContainer.style.display = "none";
-    dom.progressContainer.className = "progress-container"; // Reset classes
-    // Restore main content
-    if (dom.controls) dom.controls.style.display = "flex";
-    if (dom.status) dom.status.style.display = "block";
-    const resultsRoot = document.getElementById("results-root");
-    if (resultsRoot) resultsRoot.style.display = "block";
-    const footer = document.querySelector(".footer");
-    if (footer) footer.style.display = "flex";
-  }, success ? 2000 : 4000); // Show longer on error
+  setTimeout(
+    () => {
+      dom.progressContainer.style.display = "none";
+      dom.progressContainer.className = "progress-container"; // Reset classes
+      // Restore main content
+      if (dom.controls) dom.controls.style.display = "flex";
+      if (dom.status) dom.status.style.display = "block";
+      const resultsRoot = document.getElementById("results-root");
+      if (resultsRoot) resultsRoot.style.display = "block";
+      const footer = document.querySelector(".footer");
+      if (footer) footer.style.display = "flex";
+    },
+    success ? 2000 : 4000,
+  ); // Show longer on error
 }
 
 function toggleHelp(show) {
@@ -146,14 +154,16 @@ async function requestScheduleFromPage() {
       if (chrome.runtime.lastError) {
         reject(
           new Error(
-            "No content script detected. Open the PrintSchedule page first."
-          )
+            "No content script detected. Open the PrintSchedule page first.",
+          ),
         );
         return;
       }
       if (!res || !res.success || !res.data) {
         reject(
-          new Error(res ? res.error || "Failed to extract schedule." : "No data")
+          new Error(
+            res ? res.error || "Failed to extract schedule." : "No data",
+          ),
         );
         return;
       }
@@ -164,7 +174,7 @@ async function requestScheduleFromPage() {
 
 function getSelectedTermCodes() {
   return Array.from(
-    dom.termsList.querySelectorAll('input[type="checkbox"]:checked')
+    dom.termsList.querySelectorAll('input[type="checkbox"]:checked'),
   ).map((c) => c.value);
 }
 
@@ -204,20 +214,26 @@ async function restoreExportOptions() {
     const icsChk = document.getElementById("chk-ics");
     const googleChk = document.getElementById("chk-google");
     const outlookChk = document.getElementById("chk-outlook");
-    
+
     if (exportOptions) {
       // Restore saved options
       if (icsChk) {
         icsChk.checked = exportOptions.ics ?? false;
-        icsChk.closest(".option-card")?.classList.toggle("checked", icsChk.checked);
+        icsChk
+          .closest(".option-card")
+          ?.classList.toggle("checked", icsChk.checked);
       }
       if (googleChk) {
         googleChk.checked = exportOptions.google ?? false;
-        googleChk.closest(".option-card")?.classList.toggle("checked", googleChk.checked);
+        googleChk
+          .closest(".option-card")
+          ?.classList.toggle("checked", googleChk.checked);
       }
       if (outlookChk) {
         outlookChk.checked = exportOptions.outlook ?? false;
-        outlookChk.closest(".option-card")?.classList.toggle("checked", outlookChk.checked);
+        outlookChk
+          .closest(".option-card")
+          ?.classList.toggle("checked", outlookChk.checked);
       }
     } else {
       // First run - default to ICS checked
@@ -295,7 +311,7 @@ function renderProviderResult(provider, result) {
       <div class="result-actions">
         <button class="ghost" data-action="toggle" data-for="${id}">Details</button>
         <button class="ghost" data-action="copy" data-json='${JSON.stringify(
-          result
+          result,
         ).replace(/'/g, "\\'")}'>Copy</button>
       </div>
     </div>
@@ -305,7 +321,7 @@ function renderProviderResult(provider, result) {
   const errContainer = card.querySelector(".result-errors");
   errContainer.innerHTML = errors
     .map(
-      (e) => `<div class="result-error">${e.error || JSON.stringify(e)}</div>`
+      (e) => `<div class="result-error">${e.error || JSON.stringify(e)}</div>`,
     )
     .join("");
 
@@ -329,10 +345,10 @@ function renderProviderResult(provider, result) {
 function pollImportJob(jobId, provider, totalEvents) {
   showProgress(true, provider);
   setStatus("");
-  
+
   const check = async () => {
     const resp = await new Promise((resolve) =>
-      chrome.runtime.sendMessage({ action: "queryJob", jobId }, resolve)
+      chrome.runtime.sendMessage({ action: "queryJob", jobId }, resolve),
     );
     console.log("pollImportJob response:", resp);
     if (!resp) {
@@ -345,7 +361,10 @@ function pollImportJob(jobId, provider, totalEvents) {
       console.log("Job done, calling setProgressComplete");
       const result = resp.result || { created: 0, errors: [] };
       const errCount = (result.errors || []).length;
-      setProgressComplete(true, `Successfully created ${result.created} events${errCount > 0 ? ` (${errCount} errors)` : ""}`);
+      setProgressComplete(
+        true,
+        `Successfully created ${result.created} events${errCount > 0 ? ` (${errCount} errors)` : ""}`,
+      );
       setStatus("");
       renderProviderResult(provider, result);
       return;
@@ -377,8 +396,8 @@ async function startProviderImport(provider, events) {
       (res) => {
         if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
         resolve(res);
-      }
-    )
+      },
+    ),
   );
   if (startResp && startResp.jobId) {
     pollImportJob(startResp.jobId, provider, events.length);
@@ -422,7 +441,9 @@ async function loadTerms() {
     if (terms.length === 0) {
       setStatus("No terms found on this page.");
     } else {
-      setStatus("Terms loaded. Select desired terms or leave none to include all.");
+      setStatus(
+        "Terms loaded. Select desired terms or leave none to include all.",
+      );
     }
   } catch (e) {
     setStatus(e.message || "Unable to load terms.");

@@ -87,27 +87,43 @@ function getNthWeekdayOfMonth(year, month, weekday, n) {
  */
 function getReadingWeeks(fallYear) {
   const breaks = [];
-  
+
   // Fall Study Break: 2nd Monday of October is Thanksgiving
   // Break runs from Saturday before Thanksgiving through Tuesday after
   // Sat, Sun, Mon (Thanksgiving Holiday), Tue (Study Break Day) - classes resume Wed
   const thanksgiving = getNthWeekdayOfMonth(fallYear, 9, 1, 2); // October, Monday, 2nd
-  const fallBreakStart = new Date(thanksgiving.getFullYear(), thanksgiving.getMonth(), thanksgiving.getDate() - 2); // Saturday
-  const fallBreakEnd = new Date(thanksgiving.getFullYear(), thanksgiving.getMonth(), thanksgiving.getDate() + 1); // Tuesday
+  const fallBreakStart = new Date(
+    thanksgiving.getFullYear(),
+    thanksgiving.getMonth(),
+    thanksgiving.getDate() - 2,
+  ); // Saturday
+  const fallBreakEnd = new Date(
+    thanksgiving.getFullYear(),
+    thanksgiving.getMonth(),
+    thanksgiving.getDate() + 1,
+  ); // Tuesday
   breaks.push({
     start: fallBreakStart,
-    end: fallBreakEnd
+    end: fallBreakEnd,
   });
-  
+
   // Winter Reading Week: 3rd Monday of February is Family Day
   // Reading week is Mon-Fri of that week
   const winterYear = fallYear + 1;
   const familyDay = getNthWeekdayOfMonth(winterYear, 1, 1, 3); // February, Monday, 3rd
   breaks.push({
-    start: new Date(familyDay.getFullYear(), familyDay.getMonth(), familyDay.getDate()),
-    end: new Date(familyDay.getFullYear(), familyDay.getMonth(), familyDay.getDate() + 4) // Friday
+    start: new Date(
+      familyDay.getFullYear(),
+      familyDay.getMonth(),
+      familyDay.getDate(),
+    ),
+    end: new Date(
+      familyDay.getFullYear(),
+      familyDay.getMonth(),
+      familyDay.getDate() + 4,
+    ), // Friday
   });
-  
+
   return breaks;
 }
 
@@ -134,37 +150,50 @@ function getExamPeriod(termEndDate) {
  * @param {boolean} [includeExamPeriod=true] - Whether to include exam period in exclusions
  * @returns {Array<Date>} Dates to exclude
  */
-function getBreakDatesForEvent(eventStart, eventEnd, targetDays, includeExamPeriod = true) {
+function getBreakDatesForEvent(
+  eventStart,
+  eventEnd,
+  targetDays,
+  includeExamPeriod = true,
+) {
   const excludeDates = [];
-  
+
   // Determine academic year from event start
   // If event starts Aug-Dec, fall year is that year
   // If event starts Jan-Jul, fall year is previous year
   const startMonth = eventStart.getMonth();
-  const fallYear = startMonth >= 7 ? eventStart.getFullYear() : eventStart.getFullYear() - 1;
-  
+  const fallYear =
+    startMonth >= 7 ? eventStart.getFullYear() : eventStart.getFullYear() - 1;
+
   // Get reading weeks for this academic year and potentially the next
-  const breaks = [...getReadingWeeks(fallYear), ...getReadingWeeks(fallYear + 1)];
-  
+  const breaks = [
+    ...getReadingWeeks(fallYear),
+    ...getReadingWeeks(fallYear + 1),
+  ];
+
   // Add exam period (last 2 weeks of the term) to breaks if requested
   if (includeExamPeriod) {
     const examPeriod = getExamPeriod(eventEnd);
     breaks.push(examPeriod);
   }
-  
+
   for (const breakPeriod of breaks) {
     // Iterate through each day of the break
     const current = new Date(breakPeriod.start);
     while (current <= breakPeriod.end) {
       // Check if this break day falls within the event's recurrence range
       // and matches one of the event's weekdays
-      if (current >= eventStart && current <= eventEnd && targetDays.includes(current.getDay())) {
+      if (
+        current >= eventStart &&
+        current <= eventEnd &&
+        targetDays.includes(current.getDay())
+      ) {
         excludeDates.push(new Date(current));
       }
       current.setDate(current.getDate() + 1);
     }
   }
-  
+
   return excludeDates;
 }
 
@@ -183,21 +212,21 @@ function buildCalendarLines(events) {
     const ev = events[i];
     if (!ev.StartTime || !ev.EndTime) continue;
 
-  let startDt = parseDateTime(ev.StartDate, ev.StartTime);
-  let endDt = parseDateTime(ev.StartDate, ev.EndTime);
-  if (!startDt || !endDt) continue;
-  // duration in ms between original start and end
-  const origStartTs = startDt.getTime();
-  const origEndTs = endDt.getTime();
-  const durationMs = origEndTs - origStartTs;
+    let startDt = parseDateTime(ev.StartDate, ev.StartTime);
+    let endDt = parseDateTime(ev.StartDate, ev.EndTime);
+    if (!startDt || !endDt) continue;
+    // duration in ms between original start and end
+    const origStartTs = startDt.getTime();
+    const origEndTs = endDt.getTime();
+    const durationMs = origEndTs - origStartTs;
 
     // Build BYDAY from DaysOfWeek (case-insensitive). Support compact forms like "MWF",
     // "TTh"/"TTH" etc. Preserve token order and handle 'Th' as a two-letter token.
-  const tokenRegex = /Th|M|T|W|F/g;
-  const tokenToBy = { M: "MO", T: "TU", W: "WE", Th: "TH", F: "FR" };
-  const tokens = (ev.DaysOfWeek.match(tokenRegex) || []).map((t) => t.trim());
-  const days = tokens.map((t) => tokenToBy[t]).filter(Boolean);
-  const byday = days.join(",");
+    const tokenRegex = /Th|M|T|W|F/g;
+    const tokenToBy = { M: "MO", T: "TU", W: "WE", Th: "TH", F: "FR" };
+    const tokens = (ev.DaysOfWeek.match(tokenRegex) || []).map((t) => t.trim());
+    const days = tokens.map((t) => tokenToBy[t]).filter(Boolean);
+    const byday = days.join(",");
 
     // Calculate UNTIL date from EndDate
     let untilDtTs;
@@ -237,7 +266,7 @@ function buildCalendarLines(events) {
     }
 
     const desc = `Instructor(s): ${(ev.Instructors || []).join(
-      " | "
+      " | ",
     )}\nCredits: ${ev.Credits || ""}`;
 
     lines.push("BEGIN:VEVENT");
@@ -247,16 +276,24 @@ function buildCalendarLines(events) {
     lines.push(`DTEND:${formatICSDatetime(endDt)}`);
     if (byday) {
       lines.push(
-        `RRULE:FREQ=WEEKLY;BYDAY=${byday};UNTIL=${formatICSDatetime(untilDt)}`
+        `RRULE:FREQ=WEEKLY;BYDAY=${byday};UNTIL=${formatICSDatetime(untilDt)}`,
       );
-      
+
       // Add EXDATE entries for reading weeks and exam period (for non-EXAM events)
       const bydayMap = { MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6, SU: 0 };
-      const eventTargetDays = byday.split(",").map((d) => bydayMap[d]).filter((n) => n != null);
+      const eventTargetDays = byday
+        .split(",")
+        .map((d) => bydayMap[d])
+        .filter((n) => n != null);
       // Include exam period exclusions only for regular classes, not for EXAM events
       const includeExamPeriod = ev.InstructionalMethod !== "EXAM";
-      const breakDates = getBreakDatesForEvent(startDt, untilDt, eventTargetDays, includeExamPeriod);
-      
+      const breakDates = getBreakDatesForEvent(
+        startDt,
+        untilDt,
+        eventTargetDays,
+        includeExamPeriod,
+      );
+
       for (const breakDate of breakDates) {
         // Set the EXDATE to the same time as the event start
         const exDate = new Date(breakDate);
@@ -267,7 +304,7 @@ function buildCalendarLines(events) {
     lines.push(
       `SUMMARY:${ev.InstructionalMethod || ""} ${ev.CourseName || ""}*${
         ev.SectionNumber || ""
-      }`
+      }`,
     );
     lines.push(`DESCRIPTION:${desc}`);
     lines.push(`LOCATION:${ev.Location || ""}`);
@@ -323,7 +360,7 @@ export function generateEventsFromRawData(rawData, selectedTermCodes) {
     // If at least one course marks HasRegisteredSection, prefer only registered ones
     const anyHasRegistered = pcs.some(
       (p) =>
-        p.HasRegisteredSection || (p.Section && p.Section.HasRegisteredSection)
+        p.HasRegisteredSection || (p.Section && p.Section.HasRegisteredSection),
     );
 
     pcs.forEach((p) => {
@@ -386,14 +423,14 @@ export function generateEventsFromRawData(rawData, selectedTermCodes) {
         meeting.StartTime ||
         (meeting.StartTimeHour != null
           ? `${String(meeting.StartTimeHour)}:${String(
-              meeting.StartTimeMinute || 0
+              meeting.StartTimeMinute || 0,
             ).padStart(2, "0")}`
           : meeting.RawStartTime);
       const endTime =
         meeting.EndTime ||
         (meeting.EndTimeHour != null
           ? `${String(meeting.EndTimeHour)}:${String(
-              meeting.EndTimeMinute || 0
+              meeting.EndTimeMinute || 0,
             ).padStart(2, "0")}`
           : meeting.RawEndTime);
 
