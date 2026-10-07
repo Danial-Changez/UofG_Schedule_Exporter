@@ -1,25 +1,25 @@
-# Dependencies
+# Node
 node_modules/
-
-# Logs
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Coverage and test artifacts
 coverage/
 .nyc_output/
 
-# OS / Editor extras
+# Python
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Desktop app output and local credentials (Schedule.ics, credentials.json, tokens)
+app/res/
+app/prod/
+prod.zip
+
+# OS / editor
 .DS_Store
 Thumbs.db
 .vscode/
+.idea/
 *.swp
 *.swo
-
-# Desktop app artifacts
-prod/*
-prod.zip
-res/*
-src/__pycache__
