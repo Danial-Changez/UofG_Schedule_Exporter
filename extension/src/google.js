@@ -51,7 +51,6 @@
       }
     }
 
-    // If chrome.identity is not available, fail authentication.
     return { authenticated: false };
   }
 
@@ -136,7 +135,6 @@
     });
 
     if (!resp.ok) {
-      // Attempt to parse JSON error body, fall back to text otherwise
       let bodyText = null;
       let bodyJson = null;
 
@@ -193,7 +191,6 @@
     )}\nCredits: ${ev.Credits || ""}`;
     const location = ev.Location || "";
 
-    // Parse the start date and calculate duration
     const [sm, sd, sy] = ev.StartDate.split("/").map((s) => parseInt(s, 10));
     let startDt = new Date(
       `${sy}-${String(sm).padStart(2, "0")}-${String(sd).padStart(2, "0")} ${ev.StartTime}`,
@@ -214,18 +211,15 @@
       targetDays = tokens.map((t) => tokenToDay[t]).filter((n) => n != null);
 
       if (targetDays.length > 0) {
-        // Advance startDt up to 7 days to match one of targetDays
         let attempts = 0;
         while (!targetDays.includes(startDt.getDay()) && attempts < 7) {
           startDt = new Date(startDt.getTime() + 24 * 3600 * 1000);
           attempts++;
         }
-        // Recalculate endDt to maintain the same duration
         endDt = new Date(startDt.getTime() + durationMs);
       }
     }
 
-    // Format adjusted dates
     const formatDt = (dt) => {
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}T${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}:${String(dt.getSeconds()).padStart(2, "0")}`;
     };
@@ -241,7 +235,6 @@
 
     const resource = { summary, description, location, start, end };
 
-    // Recurrence handling: convert DaysOfWeek + EndDate to RRULE
     if (ev.DaysOfWeek) {
       // Tokenize 'Th' before single-letter tokens so "TTh" -> ["T","Th"]
       const tokenRegex = /Th|M|T|W|F/g;
@@ -267,7 +260,6 @@
           `RRULE:FREQ=WEEKLY;BYDAY=${days.join(",")};UNTIL=${untilStr}`,
         ];
 
-        // Add EXDATE entries for reading weeks and exam period (UofG breaks)
         // Only exclude exam period for regular classes, not for EXAM events
         const isExamEvent = ev.InstructionalMethod === "EXAM";
         const breakDates = isExamEvent
@@ -285,6 +277,9 @@
 
     return resource;
   }
+
+  // The date helpers below mirror ics-generator.js: the service worker loads
+  // this file with importScripts(), which cannot import that ES module.
 
   /**
    * Get the Nth occurrence of a specific weekday in a given month.
@@ -351,7 +346,6 @@
     const fallYear =
       startMonth >= 7 ? eventStart.getFullYear() : eventStart.getFullYear() - 1;
 
-    // Get reading weeks only (no exam period)
     const breaks = [
       ...getReadingWeeks(fallYear),
       ...getReadingWeeks(fallYear + 1),
@@ -381,7 +375,6 @@
    * @returns {{start: Date, end: Date}} The exam period to exclude
    */
   function getExamPeriod(termEndDate) {
-    // Exam period is the last 2 weeks (14 days) before the term end date
     const examEnd = new Date(termEndDate);
     const examStart = new Date(termEndDate);
     examStart.setDate(examStart.getDate() - 13); // 14 days total including end date
@@ -400,13 +393,11 @@
     const fallYear =
       startMonth >= 7 ? eventStart.getFullYear() : eventStart.getFullYear() - 1;
 
-    // Get reading weeks
     const breaks = [
       ...getReadingWeeks(fallYear),
       ...getReadingWeeks(fallYear + 1),
     ];
 
-    // Add exam period (last 2 weeks of the term) to breaks
     const examPeriod = getExamPeriod(eventEnd);
     breaks.push(examPeriod);
 
@@ -438,7 +429,6 @@
     calendarName = "UofG Schedule",
     accessToken = null,
   ) {
-    // List calendars and try to find by summary
     const list = await apiRequest(
       "users/me/calendarList",
       "GET",
@@ -448,7 +438,6 @@
     const existing = (list.items || []).find((c) => c.summary === calendarName);
     if (existing) return existing.id;
 
-    // Create new calendar
     const created = await apiRequest(
       "calendars",
       "POST",
@@ -465,7 +454,6 @@
    * @returns {Promise<{access_token:string}>} The acquired token object.
    */
   async function authenticate() {
-    // Prefer chrome.identity interactive flow when available
     if (typeof chrome !== "undefined" && chrome.identity.getAuthToken) {
       try {
         const token = await new Promise((res, rej) =>
@@ -481,7 +469,6 @@
         });
       }
     }
-    // If chrome.identity is not available, fail authentication.
     throw new Error("Google authentication not available in this environment");
   }
 
@@ -496,7 +483,6 @@
    */
   async function importEvents(events, progressCallback = null) {
     console.log("Google: importEvents start", { count: events.length });
-    // Ensure authenticated
     let auth = await ensureAuth();
     if (!auth.authenticated) {
       console.log(
@@ -535,7 +521,6 @@
           evShort: ev.CourseName + " " + ev.StartDate,
         });
         const payload = eventToGooglePayload(ev);
-        // Ensure or create the target calendar named 'UofG Schedule'
         const tokenToUse = auth?.accessToken ?? null;
         const calendarId = await getOrCreateCalendar(
           "UofG Schedule",
@@ -578,9 +563,6 @@
     return { success: errors.length === 0, created: created.length, errors };
   }
 
-  // Public API: exported functions (listed here for quick reference).
-  // Implementations are defined above. Attach them to self.google at the end
-  // so the module reads top-to-bottom with helpers first.
   self.google = {
     authenticate,
     importEvents,

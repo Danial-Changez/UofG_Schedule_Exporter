@@ -1,5 +1,5 @@
-// ICS generator: convert normalized events into iCalendar text.
-// - Exposes helpers to build VEVENTS and full VCALENDAR output.
+// ICS generator: normalizes the WebAdvisor `result` object into events and
+// renders them as iCalendar text.
 
 /**
  * Parse a local date string (MM/DD/YYYY) and a time string (e.g. '9:00 AM')
@@ -10,7 +10,6 @@
  * @returns {Date|null}
  */
 function parseDateTime(dateStr, timeStr) {
-  // Deterministic parser: expects dateStr in MM/DD/YYYY and time like "9:00 AM"
   if (!dateStr || !timeStr) return null;
   const parts = dateStr.split("/").map((s) => parseInt(s, 10));
   if (parts.length !== 3) return null;
@@ -18,7 +17,6 @@ function parseDateTime(dateStr, timeStr) {
   const d = parts[1];
   const y = parts[2];
 
-  // Parse time
   const t = timeStr.trim();
   const tm = t.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
   let hour = 0,
@@ -134,7 +132,6 @@ function getReadingWeeks(fallYear) {
  * @returns {{start: Date, end: Date}} The exam period to exclude
  */
 function getExamPeriod(termEndDate) {
-  // Exam period is the last 2 weeks (14 days) before the term end date
   const examEnd = new Date(termEndDate);
   const examStart = new Date(termEndDate);
   examStart.setDate(examStart.getDate() - 13); // 14 days total including end date
@@ -171,18 +168,14 @@ function getBreakDatesForEvent(
     ...getReadingWeeks(fallYear + 1),
   ];
 
-  // Add exam period (last 2 weeks of the term) to breaks if requested
   if (includeExamPeriod) {
     const examPeriod = getExamPeriod(eventEnd);
     breaks.push(examPeriod);
   }
 
   for (const breakPeriod of breaks) {
-    // Iterate through each day of the break
     const current = new Date(breakPeriod.start);
     while (current <= breakPeriod.end) {
-      // Check if this break day falls within the event's recurrence range
-      // and matches one of the event's weekdays
       if (
         current >= eventStart &&
         current <= eventEnd &&
@@ -198,8 +191,7 @@ function getBreakDatesForEvent(
 }
 
 function buildCalendarLines(events) {
-  // Build calendar lines. Exam weeks are now excluded via EXDATE entries
-  // rather than modifying the UNTIL date, for more accurate handling.
+  // Exam weeks are excluded with EXDATE entries rather than by shortening UNTIL.
 
   const lines = [
     "BEGIN:VCALENDAR",
@@ -215,20 +207,17 @@ function buildCalendarLines(events) {
     let startDt = parseDateTime(ev.StartDate, ev.StartTime);
     let endDt = parseDateTime(ev.StartDate, ev.EndTime);
     if (!startDt || !endDt) continue;
-    // duration in ms between original start and end
     const origStartTs = startDt.getTime();
     const origEndTs = endDt.getTime();
     const durationMs = origEndTs - origStartTs;
 
-    // Build BYDAY from DaysOfWeek (case-insensitive). Support compact forms like "MWF",
-    // "TTh"/"TTH" etc. Preserve token order and handle 'Th' as a two-letter token.
+    // 'Th' is matched before the single letters so "TTh" yields TU,TH.
     const tokenRegex = /Th|M|T|W|F/g;
     const tokenToBy = { M: "MO", T: "TU", W: "WE", Th: "TH", F: "FR" };
     const tokens = (ev.DaysOfWeek.match(tokenRegex) || []).map((t) => t.trim());
     const days = tokens.map((t) => tokenToBy[t]).filter(Boolean);
     const byday = days.join(",");
 
-    // Calculate UNTIL date from EndDate
     let untilDtTs;
     const ed = ev.EndDate;
     if (ed) {
@@ -237,7 +226,6 @@ function buildCalendarLines(events) {
         untilDtTs =
           new Date(p[2], p[0] - 1, p[1]).getTime() +
           (23 * 3600 + 59 * 60 + 59) * 1000;
-        // recompute endDt based on original duration to keep same length
         endDt = new Date(startDt.getTime() + durationMs);
       } else untilDtTs = startDt.getTime();
     } else untilDtTs = startDt.getTime();
@@ -254,13 +242,11 @@ function buildCalendarLines(events) {
         .map((d) => bydayMap[d])
         .filter((n) => n != null);
       if (targetDays.length > 0) {
-        // Advance startDt up to 7 days to match one of targetDays
         let attempts = 0;
         while (!targetDays.includes(startDt.getDay()) && attempts < 7) {
           startDt = new Date(startDt.getTime() + 24 * 3600 * 1000);
           attempts++;
         }
-        // Recalculate endDt to maintain the same duration on the new start date
         endDt = new Date(startDt.getTime() + durationMs);
       }
     }
@@ -280,13 +266,12 @@ function buildCalendarLines(events) {
         `RRULE:FREQ=WEEKLY;BYDAY=${byday};UNTIL=${formatICSDatetime(untilDt)}`,
       );
 
-      // Add EXDATE entries for reading weeks and exam period (for non-EXAM events)
       const bydayMap = { MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6, SU: 0 };
       const eventTargetDays = byday
         .split(",")
         .map((d) => bydayMap[d])
         .filter((n) => n != null);
-      // Include exam period exclusions only for regular classes, not for EXAM events
+      // Regular classes skip the exam period; EXAM meetings must not.
       const includeExamPeriod = ev.InstructionalMethod !== "EXAM";
       const breakDates = getBreakDatesForEvent(
         startDt,
@@ -324,7 +309,6 @@ function buildCalendarLines(events) {
  * @returns {string}
  */
 function cryptoRandomId() {
-  // Fallback UID generator using random numbers
   if (typeof crypto !== "undefined" && crypto.getRandomValues) {
     const arr = new Uint8Array(16);
     crypto.getRandomValues(arr);
@@ -345,8 +329,6 @@ function cryptoRandomId() {
  * @returns {Array<Object>} Normalized events ready for export/import.
  */
 export function generateEventsFromRawData(rawData, selectedTermCodes) {
-  // Produce a normalized events array from the raw page data. This is useful
-  // for provider imports which create events directly via API calls.
   let terms = rawData.Terms || [];
   if (Array.isArray(selectedTermCodes) && selectedTermCodes.length > 0) {
     const set = new Set(selectedTermCodes.map(String));
@@ -377,7 +359,6 @@ export function generateEventsFromRawData(rawData, selectedTermCodes) {
         else if (secHasRegistered) planned.push(p);
         // otherwise skip other sections in the same term
       } else if (anyHasRegistered) {
-        // If some courses explicitly mark registered, only include those
         if (secHasRegistered) planned.push(p);
       } else {
         // No clear registration markers — fall back to including all planned courses
@@ -399,11 +380,9 @@ export function generateEventsFromRawData(rawData, selectedTermCodes) {
     // Support two meeting shapes: PlannedMeetings (array) or Meetings (legacy)
     const meetings = sec.PlannedMeetings || sec.Meetings || [];
     meetings.forEach((meeting) => {
-      // Normalize fields: accept InstructionalMethod or InstructionalMethodCode
       const method =
         meeting.InstructionalMethod || meeting.InstructionalMethodCode || "";
 
-      // Location may appear as MeetingLocation or Room or Location
       const loc = (
         meeting.MeetingLocation ||
         meeting.Room ||
@@ -435,7 +414,7 @@ export function generateEventsFromRawData(rawData, selectedTermCodes) {
             ).padStart(2, "0")}`
           : meeting.RawEndTime);
 
-      // If both times are missing, skip (TBD or online/no-time)
+      // Meetings without a time (TBD or online) cannot be placed on a calendar.
       if (!startTime || !endTime) return;
 
       events.push({
@@ -490,7 +469,6 @@ export function generateICSFromRawData(rawData, selectedTermCodes) {
  * @returns {string}
  */
 export function eventsToICS(events) {
-  // Backwards-compatible: accept already-normalized events
   const lines = buildCalendarLines(events);
   return lines.join("\n");
 }

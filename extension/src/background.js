@@ -53,7 +53,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           createdCount: 0,
         };
         await saveJob(job);
-        // run import asynchronously (don't await) and update job
+        // Deliberately not awaited: the popup polls the job for progress.
         (async () => {
           try {
             let res;
@@ -78,7 +78,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             } else {
               throw new Error("Unsupported provider");
             }
-            // Get the latest job state before marking as done
+            // Reload so progress saved during the import is not overwritten.
             const currentJob = (await loadJob(jobId)) || job;
             const doneJob = {
               ...currentJob,

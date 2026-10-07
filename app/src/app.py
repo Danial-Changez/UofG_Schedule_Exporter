@@ -29,31 +29,26 @@ class App(ctk.CTk):
         self.title("Schedule Importer")
         self.geometry("400x260")
 
-        # Variables
         self.term_var = ctk.StringVar()
         self.import_to_gcal = ctk.BooleanVar(value=False)
         self.import_to_ocal = ctk.BooleanVar(value=False)
 
-        # Layout
         ctk.CTkLabel(self, text="Enter Term Code:").pack(pady=(20, 5))
         self.term_entry = ctk.CTkEntry(
             self, textvariable=self.term_var, placeholder_text="i.e. W24"
         )
         self.term_entry.pack(pady=5)
 
-        # Google Calendar radio button
         self.gcal_checkbox = ctk.CTkCheckBox(
             self, text="Import to Google Calendar", variable=self.import_to_gcal
         )
         self.gcal_checkbox.pack(pady=5)
 
-        # Outlook Calendar radio button
         self.ocal_checkbox = ctk.CTkCheckBox(
             self, text="Import to Outlook Calendar", variable=self.import_to_ocal
         )
         self.ocal_checkbox.pack(pady=5)
 
-        # Run button
         self.button = ctk.CTkButton(self, text="Run Parser", command=self.start_task)
         self.button.pack(pady=10)
 
@@ -97,7 +92,6 @@ class App(ctk.CTk):
         threading.Thread(target=worker, daemon=True).start()
 
 
-# Launch GUI
 if __name__ == "__main__":
     app = App()
     app.mainloop()

@@ -8,7 +8,6 @@ import pytz
 import requests
 from icalendar import Calendar
 
-# === CONFIG ===
 CLIENT_ID = "3751d727-01d8-4cf3-8b3b-895f9e107b66"
 AUTHORITY = "https://login.microsoftonline.com/2dc6a781-c713-4a93-8cb0-258bef89a7b3"
 SCOPES = ["Calendars.ReadWrite"]
@@ -17,7 +16,6 @@ ICS_PATH = "../res/Schedule.ics"
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 
 
-# === AUTHENTICATION ===
 def authenticate_outlook():
     app = msal.PublicClientApplication(CLIENT_ID, authority=AUTHORITY)
     accounts = app.get_accounts()
@@ -37,14 +35,13 @@ def authenticate_outlook():
     if "access_token" not in token_data:
         raise Exception("❌ Authentication failed.")
 
-    # Save token data for debugging and reuse
+    # Written for debugging only; nothing reads this file back.
     with open(TOKEN_PATH, "w", encoding="utf-8") as f:
         json.dump(token_data, f, indent=2)
 
     return token_data["access_token"]
 
 
-# === CALENDAR MANAGEMENT ===
 def get_or_create_outlook_calendar(token, calendar_name="UofG Schedule"):
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get(f"{GRAPH_BASE}/me/calendars", headers=headers)
@@ -55,7 +52,6 @@ def get_or_create_outlook_calendar(token, calendar_name="UofG Schedule"):
         if cal["name"].lower() == calendar_name.lower():
             return cal["id"]
 
-    # Create the calendar
     new_cal = {"name": calendar_name}
     response = requests.post(
         f"{GRAPH_BASE}/me/calendars", headers=headers, json=new_cal
@@ -64,7 +60,6 @@ def get_or_create_outlook_calendar(token, calendar_name="UofG Schedule"):
     return response.json()["id"]
 
 
-# === PARSE ICS TO OUTLOOK EVENTS ===
 def convert_rrule(rrule_string, dtstart):
     result = {
         "pattern": {
@@ -75,7 +70,7 @@ def convert_rrule(rrule_string, dtstart):
         "range": {
             "type": "endDate",
             "startDate": dtstart.date().isoformat(),
-            "endDate": "",  # filled below
+            "endDate": "",
         },
     }
 
@@ -156,7 +151,6 @@ def import_ics_to_outlook(token, calendar_id, ics_file_path):
     )
 
 
-# === MAIN ===
 def main():
     if not os.path.exists(ICS_PATH):
         print(f"❌ ICS file not found at: {ICS_PATH}")

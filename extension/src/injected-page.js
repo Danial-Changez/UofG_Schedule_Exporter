@@ -11,6 +11,6 @@
       );
     }
   } catch {
-    // ignore
+    // Nothing to post; the content script falls back to parsing inline scripts.
   }
 })();

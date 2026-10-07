@@ -9,7 +9,6 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from icalendar import Calendar
 
-# Google Calendar API scope
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 CREDENTIALS_PATH = "../res/credentials.json"
 TOKEN_PATH = "../res/token.json"
@@ -19,17 +18,14 @@ def authenticate_google():
     """Authenticate the user and return an authorized Google Calendar service."""
     creds = None
 
-    # Check for credentials.json
     if not os.path.exists(CREDENTIALS_PATH):
         raise FileNotFoundError(
             f"credentials.json not found at {CREDENTIALS_PATH}. "
             "Please provide your Google API credentials."
         )
 
-    # If token.json exists, load it
     if os.path.exists(TOKEN_PATH):
         creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-    # If not, run OAuth flow and save token.json
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
@@ -72,7 +68,7 @@ def import_ics_to_calendar(service, calendar_id, ics_file_path):
         dtstart = component.get("dtstart").dt
         dtend = component.get("dtend").dt
 
-        # Make sure datetimes are timezone-aware
+        # The ICS holds floating local times; the Calendar API needs a zone.
         if isinstance(dtstart, datetime) and dtstart.tzinfo is None:
             dtstart = tz.localize(dtstart)
         if isinstance(dtend, datetime) and dtend.tzinfo is None:

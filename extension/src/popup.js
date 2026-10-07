@@ -59,7 +59,8 @@ function showProgress(show, provider = "") {
   dom.progressContainer.style.display = show ? "flex" : "none";
   dom.progressContainer.className = "progress-container";
 
-  // Hide/show main content when progress bar is visible
+  // The progress view replaces the controls so a second import cannot be
+  // started while one is running.
   if (dom.controls) {
     dom.controls.style.display = show ? "none" : "flex";
   }
@@ -107,12 +108,10 @@ function setProgressComplete(success, message) {
   dom.progressPercent.innerText = success ? "Done!" : "Error";
   dom.progressDetail.innerText = message;
 
-  // Auto-hide after a delay and restore main UI
   setTimeout(
     () => {
       dom.progressContainer.style.display = "none";
-      dom.progressContainer.className = "progress-container"; // Reset classes
-      // Restore main content
+      dom.progressContainer.className = "progress-container";
       if (dom.controls) dom.controls.style.display = "flex";
       if (dom.status) dom.status.style.display = "block";
       const resultsRoot = document.getElementById("results-root");
@@ -185,7 +184,7 @@ function syncOptionCards() {
     const card = input.closest(".option-card");
     const update = () => {
       card?.classList.toggle("checked", input.checked);
-      saveExportOptions(); // Save when changed
+      saveExportOptions();
     };
     input.addEventListener("change", update);
     update();
@@ -216,7 +215,6 @@ async function restoreExportOptions() {
     const outlookChk = document.getElementById("chk-outlook");
 
     if (exportOptions) {
-      // Restore saved options
       if (icsChk) {
         icsChk.checked = exportOptions.ics ?? false;
         icsChk
@@ -431,11 +429,10 @@ async function loadTerms() {
       const inp = wrapper.querySelector("input");
       inp.addEventListener("change", () => {
         wrapper.classList.toggle("checked", inp.checked);
-        saveSelectedTerms(); // Save when changed
+        saveSelectedTerms();
       });
     });
 
-    // Restore previously selected terms
     await restoreSelectedTerms();
 
     if (terms.length === 0) {
@@ -493,7 +490,8 @@ function wireHelpLinks() {
 }
 
 async function init() {
-  await restoreExportOptions(); // Restore saved options first
+  // Must run before syncOptionCards(), which saves the current checkbox state.
+  await restoreExportOptions();
   syncOptionCards();
   wireHelpLinks();
   dom.runBtn.addEventListener("click", handleRunClick);

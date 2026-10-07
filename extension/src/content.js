@@ -20,7 +20,6 @@ function isSchedulePage() {
  */
 function extractScheduleData() {
   return new Promise((resolve) => {
-    // Listen for injected page script message
     function onMessage(e) {
       if (!e.data || e.data.type !== "SCHEDULE_RESULT") return;
       window.removeEventListener("message", onMessage);
@@ -40,7 +39,8 @@ function extractScheduleData() {
 
     window.addEventListener("message", onMessage);
 
-    // Inject script into page context to read window.result and post it.
+    // Content scripts cannot read page variables, so a script injected into
+    // the page posts window.result back.
     try {
       const script = document.createElement("script");
       script.src = chrome.runtime.getURL("src/injected-page.js");
@@ -76,8 +76,6 @@ function extractScheduleData() {
   });
 }
 
-// Support both callback and promise styles from popup
-// Respond to extractSchedule requests from the popup.
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg && msg.action === "extractSchedule") {
     if (!isSchedulePage()) {
