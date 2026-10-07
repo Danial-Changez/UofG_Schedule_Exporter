@@ -1,28 +1,29 @@
 import os
 import re
-import pytz
 from datetime import datetime
-from icalendar import Calendar
+
+import pytz
 from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from icalendar import Calendar
 
 # Google Calendar API scope
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
+CREDENTIALS_PATH = "../res/credentials.json"
+TOKEN_PATH = "../res/token.json"
 
 
 def authenticate_google():
     """Authenticate the user and return an authorized Google Calendar service."""
     creds = None
-    CREDENTIALS_PATH = "../res/credentials.json"
-    TOKEN_PATH = "../res/token.json"
-    SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
     # Check for credentials.json
     if not os.path.exists(CREDENTIALS_PATH):
         raise FileNotFoundError(
-            f"credentials.json not found at {CREDENTIALS_PATH}. Please provide your Google API credentials."
+            f"credentials.json not found at {CREDENTIALS_PATH}. "
+            "Please provide your Google API credentials."
         )
 
     # If token.json exists, load it
@@ -55,7 +56,7 @@ def get_or_create_calendar(service, calendar_name="UofG Schedule"):
 
 def import_ics_to_calendar(service, calendar_id, ics_file_path):
     """Parse .ics file and insert events into the target calendar."""
-    with open(ics_file_path, "r", encoding="UTF-8") as f:
+    with open(ics_file_path, encoding="UTF-8") as f:
         cal = Calendar.from_ical(f.read())
 
     tz = pytz.timezone("America/Toronto")

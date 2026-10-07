@@ -1,3 +1,8 @@
 [tool.ruff]
 line-length = 88
 target-version = "py310"
+src = ["src"]
+
+[tool.ruff.lint]
+# pycodestyle, pyflakes, isort, pep8-naming, pyupgrade, bugbear, simplify
+select = ["E", "W", "F", "I", "N", "UP", "B", "SIM"]

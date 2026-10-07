@@ -1,14 +1,15 @@
-import os
 import json
+import os
 import re
+from datetime import datetime
+
 import msal
 import pytz
 import requests
-from datetime import datetime
 from icalendar import Calendar
 
 # === CONFIG ===
-CLIENT_ID = "3751d727-01d8-4cf3-8b3b-895f9e107b66"  # Replace with actual Azure App ID (Removed for security purposes for now)
+CLIENT_ID = "3751d727-01d8-4cf3-8b3b-895f9e107b66"
 AUTHORITY = "https://login.microsoftonline.com/2dc6a781-c713-4a93-8cb0-258bef89a7b3"
 SCOPES = ["Calendars.ReadWrite"]
 TOKEN_PATH = "../res/outlook_token.json"
@@ -107,7 +108,7 @@ def import_ics_to_outlook(token, calendar_id, ics_file_path):
     tz = pytz.timezone("America/Toronto")
     created = 0
 
-    with open(ics_file_path, "r", encoding="UTF-8") as f:
+    with open(ics_file_path, encoding="UTF-8") as f:
         cal = Calendar.from_ical(f.read())
 
     for component in cal.walk():

@@ -1,8 +1,23 @@
-import customtkinter as ctk
 import threading
-from parse_schedule import *
-from google_calendar import *
-from outlook_calendar import *
+
+import customtkinter as ctk
+
+from google_calendar import (
+    authenticate_google,
+    get_or_create_calendar,
+    import_ics_to_calendar,
+)
+from outlook_calendar import (
+    authenticate_outlook,
+    get_or_create_outlook_calendar,
+    import_ics_to_outlook,
+)
+from parse_schedule import (
+    extract_courses,
+    fetch_page_info,
+    generate_ics,
+    sorted_courses,
+)
 
 
 class App(ctk.CTk):

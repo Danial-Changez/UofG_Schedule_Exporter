@@ -1,16 +1,17 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
-import requests
-import re
 import json
-from datetime import datetime, timedelta, timezone
-import uuid
+import re
 import time
 import tkinter as tk
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 def fetch_page_info(term: str) -> str:
@@ -44,7 +45,9 @@ def fetch_page_info(term: str) -> str:
 
     try:
         # Open the schedule URL and wait (up to 10 minutes) for MFA/login
-        WebDriverWait(driver, 600).until(EC.url_contains("/PrintSchedule"))
+        WebDriverWait(driver, 600).until(
+            expected_conditions.url_contains("/PrintSchedule")
+        )
 
         # Store cookies
         cookies = driver.get_cookies()
@@ -128,10 +131,6 @@ def sorted_courses(raw: list[dict]) -> list[dict]:
     return output
 
 
-from datetime import datetime, timedelta, timezone
-import uuid
-
-
 def generate_ics(events: list[dict], output_file: str):
     # Build cutoff_map from non-exam items: end_date − 2 weeks
     cutoff_map = {}
@@ -198,6 +197,10 @@ def generate_ics(events: list[dict], output_file: str):
             f"Instructor(s): {' | '.join(ev['Instructors'])}\\nCredits: {ev['Credits']}"
         )
 
+        summary = (
+            f"{ev['InstructionalMethod']} {ev['CourseName']}*{ev['SectionNumber']}"
+        )
+
         # Append the VEVENT
         cal += [
             "BEGIN:VEVENT",
@@ -206,7 +209,7 @@ def generate_ics(events: list[dict], output_file: str):
             f"DTSTART:{start_dt.strftime('%Y%m%dT%H%M%S')}",
             f"DTEND:{end_dt.strftime('%Y%m%dT%H%M%S')}",
             f"RRULE:FREQ=WEEKLY;BYDAY={byday_str};UNTIL={until_dt.strftime('%Y%m%dT%H%M%S')}",
-            f"SUMMARY:{ev['InstructionalMethod']} {ev['CourseName']}*{ev['SectionNumber']}",
+            f"SUMMARY:{summary}",
             f"DESCRIPTION:{desc}",
             f"LOCATION:{ev['Location']}",
             "END:VEVENT",
