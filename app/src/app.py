@@ -4,6 +4,7 @@ from parse_schedule import *
 from google_calendar import *
 from outlook_calendar import *
 
+
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -20,15 +21,21 @@ class App(ctk.CTk):
 
         # Layout
         ctk.CTkLabel(self, text="Enter Term Code:").pack(pady=(20, 5))
-        self.term_entry = ctk.CTkEntry(self, textvariable=self.term_var, placeholder_text="i.e. W24")
+        self.term_entry = ctk.CTkEntry(
+            self, textvariable=self.term_var, placeholder_text="i.e. W24"
+        )
         self.term_entry.pack(pady=5)
 
         # Google Calendar radio button
-        self.gcal_checkbox = ctk.CTkCheckBox(self, text="Import to Google Calendar", variable=self.import_to_gcal)
+        self.gcal_checkbox = ctk.CTkCheckBox(
+            self, text="Import to Google Calendar", variable=self.import_to_gcal
+        )
         self.gcal_checkbox.pack(pady=5)
 
         # Outlook Calendar radio button
-        self.ocal_checkbox = ctk.CTkCheckBox(self, text="Import to Outlook Calendar", variable=self.import_to_ocal)
+        self.ocal_checkbox = ctk.CTkCheckBox(
+            self, text="Import to Outlook Calendar", variable=self.import_to_ocal
+        )
         self.ocal_checkbox.pack(pady=5)
 
         # Run button
@@ -55,7 +62,7 @@ class App(ctk.CTk):
                 service = authenticate_outlook()
                 calendar_id = get_or_create_outlook_calendar(service)
                 import_ics_to_outlook(service, calendar_id, output_path)
-                
+
             return f"✔ Parsed {len(parsed)} meetings → {output_path}"
         except Exception as e:
             return f"❌ Error: {str(e)}"
@@ -66,11 +73,14 @@ class App(ctk.CTk):
 
         def worker():
             term = self.term_var.get().strip().upper() or "W24"
-            result = self.run_schedule(term, self.import_to_gcal.get(), self.import_to_ocal.get())
+            result = self.run_schedule(
+                term, self.import_to_gcal.get(), self.import_to_ocal.get()
+            )
             self.status_label.configure(text=result)
             self.button.configure(state="normal", text="Run Parser")
 
         threading.Thread(target=worker, daemon=True).start()
+
 
 # Launch GUI
 if __name__ == "__main__":
