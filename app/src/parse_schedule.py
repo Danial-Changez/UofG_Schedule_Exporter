@@ -20,7 +20,7 @@ def fetch_page_info(term: str) -> str:
     root = tk.Tk()
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
-    root.destroy
+    root.destroy()
 
     # Calculate center of screen and a percentage of display resolution
     percentage = 0.70
