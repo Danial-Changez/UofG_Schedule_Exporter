@@ -13,7 +13,7 @@ Turns a University of Guelph WebAdvisor schedule into calendar events. The repos
 
 ### Install
 
-The extension is not published on the Chrome Web Store; load it unpacked.
+Load the extension unpacked from this repository:
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
 2. Click **Load unpacked** and select the `extension/` folder.
@@ -26,7 +26,7 @@ The extension is not published on the Chrome Web Store; load it unpacked.
 
 ### What it does
 
-- Creates one weekly event per meeting that has a time, starting on the first meeting day on or after the section start date and repeating until the section end date.
+- Creates one weekly event per meeting that has a time, starting on the first meeting day on or after the section start date and repeating until the section end date. A meeting with no day codes becomes a single event.
 - Exports only the sections you are registered in when the page marks them, otherwise every planned section.
 - Skips the fall study break, the winter reading week and, for everything except exams, the last 14 days before the section end date. These dates are computed from fixed rules (Thanksgiving and Family Day), not read from the university calendar.
 - Google export signs in through `chrome.identity` with the OAuth client ID in `manifest.json` and adds the events to a calendar named "UofG Schedule", creating it if needed.
