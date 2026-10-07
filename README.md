@@ -1,77 +1,88 @@
-<h1> Guelph Schedule Exporter (Chrome Extension) </h1>
+# UofG Schedule Exporter
 
 ![Extension icon](extension/icons/logo.png)
 
-Export your University of Guelph WebAdvisor schedule to ICS or send it straight into Google calendars (outlook import coming soon).
+Turns a University of Guelph WebAdvisor schedule into calendar events. The repository holds two independent tools that read the same schedule data from WebAdvisor's **PrintSchedule** page:
 
----
+| Tool                           | Folder       | Output                                                                      |
+| ------------------------------ | ------------ | --------------------------------------------------------------------------- |
+| Chrome extension (Manifest V3) | `extension/` | A `schedule.ics` download, or events in Google Calendar                     |
+| Desktop app (Python, Selenium) | `app/`       | `app/res/Schedule.ics`, optionally imported into Google Calendar or Outlook |
 
-<h2> Table of Contents </h2>
+## Chrome extension
 
-- [Setup](#setup)
-- [Usage](#usage)
-- [Key Features](#key-features)
-- [Provider Notes](#provider-notes)
-- [File Map](#file-map)
-- [Testing](#testing)
-- [Future Improvements](#future-improvements)
+### Install
 
----
+The extension is not published on the Chrome Web Store; load it unpacked.
 
-## Setup
+1. Open `chrome://extensions` and turn on **Developer mode**.
+2. Click **Load unpacked** and select the `extension/` folder.
 
-1. Install dependencies for developer testing, otherwise skip to step 2 for usage:
-   ```sh
-   npm install
-   ```
-2. In Chrome/Edge, open `chrome://extensions`, toggle **Developer mode**, then **Load unpacked** pointing to this extension folder root.
-3. (Optional) Open the extension **Options** page to override Google/Outlook OAuth client IDs stored in `chrome.storage.local`.
+### Use
 
-## Usage
+1. Sign in to WebAdvisor and open **Plan your Schedule > Print** (the `PrintSchedule` page).
+2. Click the extension icon. The popup lists the terms found on the page; tick the ones to export, or none to export all of them.
+3. Tick **Download ICS**, **Export to Google** or both, then press **Run Selected**.
 
-1. Sign in to WebAdvisor and navigate "Plan your Schedule > Print", open your **PrintSchedule** page so the content script can see the embedded `result` object.
-2. Click the extension icon to open the pop-up. It will auto-detect available terms and list them as toggleable cards. Reload the page if no terms show up.
-3. Choose one or more actions:
-   - **Download ICS** - Generates `schedule.ics` locally.
-   - **Google Calendar** - Interactive `chrome.identity` OAuth, then job-based import via the Calendar REST API.
-   - **Outlook Calendar** - Microsoft identity + Graph Calendar import.
-4. Press **Run Selected**. Progress and per-provider results/errors show inline for debugging.
-5. Need a walkthrough? Use the pop-up help link for a quick tutorial on term selection and provider flows.
+### What it does
 
-## Key Features
+- Creates one weekly event per meeting that has a time, starting on the first meeting day on or after the section start date and repeating until the section end date.
+- Exports only the sections you are registered in when the page marks them, otherwise every planned section.
+- Skips the fall study break, the winter reading week and, for everything except exams, the last 14 days before the section end date. These dates are computed from fixed rules (Thanksgiving and Family Day), not read from the university calendar.
+- Google export signs in through `chrome.identity` with the OAuth client ID in `manifest.json` and adds the events to a calendar named "UofG Schedule", creating it if needed.
 
-- **Extraction** - Content script injects `src/injected-page.js` to post the page's `result` object, and falls back to inline-script parsing when needed.
-- **Normalization** - Filters to registered/active sections, keeping multi-instructor listings and start/end dates consistent for recurrence rules.
-- **ICS Generator** - Weekly RRULEs with cutoff handling, deterministic UIDs, and local-time DTSTART/DTEND formatted for calendar imports.
-- **Direct Imports** - Google provider runs inside the service worker with progress-tracked jobs and persistent status in `chrome.storage`.
-- **Inline Troubleshooting** - Popup renders provider result cards with JSON for bug reports.
+### What it does not do
 
-## Provider Notes
+- Detect duplicates: running an export twice creates every event twice.
+- Export meetings without a time, or recognise weekend meetings (only Monday to Friday day codes are handled).
+- Write time zones into the ICS file: times are local "floating" times. Google events are created in `America/Toronto`.
+- Outlook: the **Export to Outlook** option is unfinished and labelled "coming" in the popup. It requires your own Azure client ID saved on the options page. The options page also stores a Google client ID, which the code does not read.
 
-- **Google** (`src/google.js`) - Uses `chrome.identity/getAuthToken`, validates scopes with `tokeninfo`, creates or reuses a dedicated calendar, and batches VEVENT payloads with recurrence when available.
-- **Outlook** (`src/outlook.js`) - Mirrors the same normalized event shape, authenticates with Microsoft identity endpoints, and writes to the signed-in user's default calendar via Graph. Need to update the endpoint to complete access.
-- **Auth cleanup** - The options page exposes stored client IDs, while `google.js` also includes helpers to clear cached tokens when debugging consent prompts.
+### Develop
 
-## File Map
+Requires Node.js (CI uses version 24).
 
-| Component           | Path                   | Purpose                                              |
-| ------------------- | ---------------------- | ---------------------------------------------------- |
-| Content script      | `src/content.js`       | Detects schedule pages and extracts `result`.        |
-| Injected helper     | `src/injected-page.js` | Runs in page context to post schedule data.          |
-| Popup UI            | `src/popup.js`         | Term selection, action toggles, job polling/results. |
-| ICS + normalization | `src/ics-generator.js` | Builds normalized events and ICS text.               |
-| Background worker   | `src/background.js`    | Manages import jobs and storage.                     |
-| Google provider     | `src/google.js`        | Calendar REST auth + event creation.                 |
-| Outlook provider    | `src/outlook.js`       | Microsoft Graph auth + event creation.               |
-| Options page        | `src/options.js`       | Persist alternate client IDs and show help.          |
+```sh
+cd extension
+npm ci
+npm test              # Mocha specs
+npm run lint          # ESLint
+npm run format:check  # Prettier
+```
 
-## Testing
+## Desktop app
 
-- Run mocha suite: `npm test`
-- Fixtures under `tests/fixtures/` cover multi-instructor cases, ICS helpers, and OAuth flow mocks.
+A small window that opens Chrome on the PrintSchedule page for one term, waits up to 10 minutes for you to sign in, then writes `app/res/Schedule.ics`.
 
-## Future Improvements
+### Install and run
 
-1. Auto-detect and display overlapping meetings before export/import.
-2. Allow selecting a target calendar name (rather than the hard-coded defaults) in the pop-up.
-3. Adjust Outlook Calendar API endpoint.
+Requires Python 3.10 or newer with Tk, and Google Chrome. Use a virtual environment.
+
+```sh
+cd app
+pip install -e .
+python -m uofg_schedule_exporter.app
+```
+
+Enter a term code such as `F25` (blank means `W24`) and press **Run Parser**. The two import checkboxes are optional:
+
+- **Google Calendar** needs your own OAuth client file saved as `app/res/credentials.json`. The token is cached in `app/res/token.json`.
+- **Outlook Calendar** uses the Azure app registration set in `src/uofg_schedule_exporter/outlook_calendar.py` and prints a device sign-in code to the terminal.
+
+Both add the events to a calendar named "UofG Schedule", creating it if needed. `app/res/` is gitignored.
+
+### How it differs from the extension
+
+- It exports every planned section in the term, not only registered ones.
+- It has no study-break or reading-week exclusions. Weekly classes simply stop two weeks before the section end date.
+- The first event is on the section start date, even when that is not a meeting day.
+
+### Develop
+
+```sh
+cd app
+pip install -e ".[dev]"
+pytest
+ruff check .
+ruff format --check .
+```
