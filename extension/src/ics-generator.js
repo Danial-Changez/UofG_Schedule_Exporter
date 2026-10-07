@@ -42,14 +42,14 @@ function parseDateTime(dateStr, timeStr) {
 }
 
 /**
- * Format a Date object to an iCalendar DATE-TIME string: YYYYMMDDTHHMMSS
- * Optionally append 'Z' for UTC.
+ * Format a Date object to an iCalendar DATE-TIME string: local wall-clock
+ * time as YYYYMMDDTHHMMSS, or UTC with a trailing 'Z' when `utc` is set.
  * @param {Date} dt
  * @param {boolean} [utc=false]
  * @returns {string}
  */
 function formatICSDatetime(dt, utc = false) {
-  // Format as YYYYMMDDTHHMMSS or with trailing Z if UTC
+  if (utc) return dt.toISOString().replace(/[-:]|\.\d{3}/g, "");
   const pad = (n) => String(n).padStart(2, "0");
   const year = dt.getFullYear();
   const month = pad(dt.getMonth() + 1);
@@ -57,7 +57,7 @@ function formatICSDatetime(dt, utc = false) {
   const hour = pad(dt.getHours());
   const min = pad(dt.getMinutes());
   const sec = pad(dt.getSeconds());
-  return `${year}${month}${day}T${hour}${min}${sec}${utc ? "Z" : ""}`;
+  return `${year}${month}${day}T${hour}${min}${sec}`;
 }
 
 /**
