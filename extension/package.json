@@ -4,11 +4,14 @@
   "description": "Export UofG Schedules to ICS/Google/Outlook",
   "type": "module",
   "scripts": {
-    "test": "mocha \"tests/*.spec.js\" --exit"
+    "test": "mocha \"tests/*.spec.js\" --exit",
+    "format": "prettier --write . ../README.md",
+    "format:check": "prettier --check . ../README.md"
   },
   "devDependencies": {
     "chai": "^6.2.1",
-    "mocha": "^11.7.5"
+    "mocha": "^11.7.5",
+    "prettier": "3.9.9"
   },
   "private": true
 }
