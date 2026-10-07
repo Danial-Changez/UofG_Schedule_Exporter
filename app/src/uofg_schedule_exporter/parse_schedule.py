@@ -4,6 +4,7 @@ import time
 import tkinter as tk
 import uuid
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
@@ -198,6 +199,8 @@ def generate_ics(events: list[dict], output_file: str):
         cal.pop()
     cal.append("END:VCALENDAR")
 
+    # The output folder is gitignored, so it is missing on a fresh clone.
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("\n".join(cal))
 
